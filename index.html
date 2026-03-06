@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Founder Decision Engine — by Shay Brin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070c18;
+  --surface:#0c1220;
+  --surface2:#101828;
+  --surface3:#141f32;
+  --border:#192540;
+  --border2:#1e2d4a;
+  --text:#dde8f8;
+  --text-muted:#5d7299;
+  --text-dim:#243050;
+  --accent:#0ea5a0;
+  --accent-light:#2dd4bf;
+  --accent-dim:rgba(14,165,160,.1);
+  --accent-border:rgba(14,165,160,.35);
+  --ai:#8b5cf6;
+  --ai-dim:rgba(139,92,246,.08);
+  --ai-border:rgba(139,92,246,.28);
+  --warn:#f59e0b;
+  --warn-dim:rgba(245,158,11,.1);
+  --danger:#f87171;
+  --danger-dim:rgba(248,113,113,.08);
+  --success:#10b981;
+  --success-dim:rgba(16,185,129,.08);
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;min-height:100vh}
+
+/* RESTORE BANNER */
+#restoreBanner{background:var(--surface);border-bottom:1px solid var(--accent-border);padding:12px 40px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text-muted)}
+#restoreBanner strong{color:var(--text)}
+.banner-btns{display:flex;gap:8px}
+
+/* HEADER */
+.app-header{border-bottom:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(7,12,24,.97);backdrop-filter:blur(12px);z-index:100}
+.logo{font-family:var(--serif);font-size:18px}
+.logo em{color:var(--accent-light);font-style:normal}
+.progress-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.progress-steps{display:flex;align-items:center;gap:5px}
+.step-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:all .2s}
+.step-dot.active{background:var(--accent-light);box-shadow:0 0 8px rgba(45,212,191,.6)}
+.step-dot.done{background:var(--success)}
+.step-line{width:16px;height:1px;background:var(--border)}
+.step-label{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:.5px}
+.by-credit{font-size:12px;color:var(--text-muted)}
+.by-credit strong{color:var(--accent-light)}
+
+/* LAYOUT */
+.app-body{display:flex;min-height:calc(100vh - 57px)}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);padding:28px 0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto;background:var(--surface)}
+.sidebar-section{padding:0 16px;margin-bottom:6px}
+.sidebar-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.2px;text-transform:uppercase;padding:10px 8px 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:all .12s;border:none;background:transparent;width:100%;text-align:left;color:var(--text-muted);font-family:var(--sans);font-size:13px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent-light);border:1px solid var(--accent-border)}
+.nav-item.done{color:var(--text)}
+.nav-item.locked{opacity:.35;cursor:not-allowed}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:all .2s}
+.nav-item.active .nav-dot{background:var(--accent-light);box-shadow:0 0 6px rgba(45,212,191,.5)}
+.nav-item.done .nav-dot{background:var(--success)}
+.nav-item-text{flex:1;line-height:1.3}
+.nav-item-sub{font-size:10px;color:var(--text-dim);font-family:var(--mono);display:block;margin-top:1px}
+.nav-item.active .nav-item-sub{color:var(--accent)}
+.nav-divider{height:1px;background:var(--border);margin:10px 16px}
+.nav-results{margin-top:4px}
+.sidebar-save{padding:16px;border-top:1px solid var(--border);margin-top:auto}
+.save-btn-side{display:flex;align-items:center;gap:7px;width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);border-radius:7px;padding:9px 12px;font-size:12.5px;font-family:var(--sans);cursor:pointer;transition:all .12s}
+.save-btn-side:hover{border-color:var(--accent-border);color:var(--accent-light)}
+.save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
+.save-toast.visible{opacity:1}
+
+/* MAIN */
+.main{flex:1;max-width:720px;padding:52px 40px 120px;min-width:0}
+
+/* GATES */
+.gate{display:none;animation:fadeUp .22s ease}
+.gate.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.gate-kicker{font-family:var(--mono);font-size:10px;color:var(--accent-light);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.gate-title{font-family:var(--serif);font-size:32px;line-height:1.15;margin-bottom:8px;letter-spacing:-.3px}
+.gate-title em{color:var(--accent-light);font-style:normal}
+.gate-sub{color:var(--text-muted);font-size:13.5px;margin-bottom:36px;max-width:520px;line-height:1.6}
+
+/* FORM ELEMENTS */
+.field{margin-bottom:22px}
+.field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text)}
+.field .hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.5}
+input[type=text],input[type=number],textarea,select{
+  width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:8px;
+  padding:10px 13px;color:var(--text);font-family:var(--sans);font-size:14px;
+  transition:border-color .15s,box-shadow .15s;outline:none;appearance:none;-webkit-appearance:none
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px var(--accent-dim)}
+textarea{resize:vertical;min-height:80px;line-height:1.55}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235d7299' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;cursor:pointer}
+select option{background:#0c1220}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.narrow{max-width:200px}
+
+/* OPTION BUTTONS */
+.opts{display:flex;flex-wrap:wrap;gap:7px}
+.opts.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
+.opt{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:9px 13px;color:var(--text-muted);font-size:13px;cursor:pointer;transition:all .1s;white-space:nowrap}
+.opt:hover{color:var(--text);background:var(--surface2)}
+.opt.sel{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent-light)}
+
+/* GOAL EXTRA FIELDS */
+#goalExtra{margin-top:12px;display:none}
+
+/* CONDITIONAL GTM */
+#gtmConditional{display:none;margin-top:14px}
+
+/* AI ASSIST */
+.ai-assist-btn{display:inline-flex;align-items:center;gap:7px;background:var(--ai-dim);border:1px solid var(--ai-border);color:var(--ai);border-radius:7px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;margin-bottom:18px}
+.ai-assist-btn:hover{background:rgba(139,92,246,.14)}
+.ai-assist-btn:disabled{opacity:.45;cursor:not-allowed}
+.ai-spinner{width:13px;height:13px;border:1.5px solid var(--ai-border);border-top-color:var(--ai);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+.ai-panel{background:var(--ai-dim);border:1px solid var(--ai-border);border-radius:10px;padding:18px;margin-bottom:20px;display:none}
+.ai-panel.visible{display:block;animation:fadeUp .2s ease}
+.ai-panel-head{font-size:10px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--ai);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.ai-panel-head::after{content:'';flex:1;height:1px;background:var(--ai-border)}
+.ai-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.ai-item{background:var(--surface2);border-radius:7px;padding:11px 13px}
+.ai-item.full{grid-column:1/-1}
+.ai-label{font-size:10px;color:var(--ai);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.ai-val{font-size:13px;color:var(--text);line-height:1.55}
+.ai-list{list-style:none;display:flex;flex-direction:column;gap:5px}
+.ai-list li{font-size:12.5px;color:var(--text-muted);padding-left:13px;position:relative}
+.ai-list li::before{content:'·';position:absolute;left:0;color:var(--ai);font-size:16px;line-height:1}
+.ai-apply-btn{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--ai-border);color:var(--ai);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:10px;transition:all .1s}
+.ai-apply-btn:hover{background:var(--ai-dim)}
+
+/* ROLES & EXPENSES TABLE */
+.dyn-table{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.dyn-head{display:grid;background:var(--surface2);border-bottom:1px solid var(--border)}
+.dyn-row{display:grid;border-bottom:1px solid var(--border);align-items:center}
+.dyn-row:last-child{border-bottom:none}
+.dyn-cell{padding:8px 11px;font-size:13px;display:flex;align-items:center}
+.dyn-head .dyn-cell{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;padding:8px 11px}
+.dyn-cell input,.dyn-cell select{padding:6px 9px;font-size:12.5px;border-radius:6px}
+.dyn-cell select{padding-right:28px}
+.dyn-cell input[type=number]{text-align:right}
+.dyn-delete{background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:15px;padding:4px;transition:color .1s;line-height:1}
+.dyn-delete:hover{color:var(--danger)}
+.roles-cols{grid-template-columns:1fr 70px 100px 100px 36px}
+.exp-cols{grid-template-columns:1fr 100px 100px 36px}
+.add-row-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--border2);color:var(--text-muted);border-radius:7px;padding:8px 14px;font-size:12.5px;cursor:pointer;transition:all .1s;margin-top:6px}
+.add-row-btn:hover{border-color:var(--accent-border);color:var(--accent-light)}
+
+/* RAMP & EXPENSE PREVIEW */
+.preview-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-top:18px;overflow:hidden}
+.preview-title{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:.8px;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.preview-scroll{overflow-x:auto}
+table.mini{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}
+table.mini th{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--text-muted);padding:7px 12px;text-align:right;background:var(--surface2);border-bottom:1px solid var(--border)}
+table.mini th:first-child{text-align:left}
+table.mini td{padding:6px 12px;text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--text);border-bottom:1px solid var(--border)}
+table.mini td:first-child{text-align:left;color:var(--text-muted);font-family:var(--sans);font-size:12px}
+table.mini tr:last-child td{border-bottom:none}
+table.mini .pos{color:var(--success)}
+table.mini .zero{color:var(--text-dim)}
+.bar-cell{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.mini-bar{height:6px;border-radius:3px;background:var(--accent);min-width:2px;transition:width .3s}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:24px 0}
+.sec-label{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+
+/* NAV BUTTONS */
+.btn-row{display:flex;align-items:center;justify-content:space-between;margin-top:40px;padding-top:22px;border-top:1px solid var(--border)}
+.btn{padding:10px 24px;border-radius:7px;font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .12s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#14b8a6;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border2)}
+.btn-ghost:hover{color:var(--text);background:var(--surface)}
+.btn-gen{background:var(--accent);color:#fff;padding:12px 30px;font-size:14px;display:inline-flex;align-items:center;gap:9px}
+.btn-gen:hover:not(:disabled){background:#14b8a6;transform:translateY(-1px)}
+.btn-gen:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-sm{padding:7px 15px;font-size:12.5px}
+.btn-danger-sm{background:transparent;border:1px solid rgba(248,113,113,.3);color:var(--danger);border-radius:6px;padding:7px 14px;font-size:12.5px;cursor:pointer}
+.err-msg{color:var(--danger);font-size:12px;margin-top:8px;display:none}
+
+/* LOADING */
+#loading{display:none;text-align:center;padding:80px 20px}
+.spinner{width:34px;height:34px;border:2px solid var(--border2);border-top-color:var(--accent-light);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 18px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{color:var(--text-muted);font-size:14px;margin-bottom:20px}
+.loading-steps{display:flex;flex-direction:column;gap:8px;align-items:center}
+.lstep{font-size:13px;color:var(--text-dim);transition:color .4s}
+.lstep.lactive{color:var(--accent-light)}
+.lstep.ldone{color:var(--success)}
+
+/* RESULTS */
+#results{display:none}
+.verdict-banner{border-radius:11px;padding:20px 24px;margin-bottom:40px;position:relative;overflow:hidden}
+.verdict-banner.fundable{background:var(--success-dim);border:1px solid rgba(16,185,129,.3)}
+.verdict-banner.cautious{background:var(--warn-dim);border:1px solid rgba(245,158,11,.3)}
+.verdict-banner.broken{background:var(--danger-dim);border:1px solid rgba(248,113,113,.3)}
+.verdict-label{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px}
+.verdict-banner.fundable .verdict-label{color:var(--success)}
+.verdict-banner.cautious .verdict-label{color:var(--warn)}
+.verdict-banner.broken .verdict-label{color:var(--danger)}
+.verdict-text{font-family:var(--serif);font-size:22px;line-height:1.25;letter-spacing:-.2px}
+.results-company{font-family:var(--serif);font-size:38px;margin-bottom:6px;letter-spacing:-.5px}
+.results-meta{color:var(--text-muted);font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:36px}
+.badge{background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent-light);border-radius:20px;padding:2px 9px;font-size:10px;font-family:var(--mono)}
+.rsec{margin-bottom:44px}
+.rsec-title{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-light);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.rsec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ONE PAGER */
+.one-pager{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px}
+.op-intro{color:var(--text-muted);font-size:13.5px;font-style:italic;margin-bottom:18px;line-height:1.65;border-left:2px solid var(--accent-border);padding-left:14px}
+.op-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.op-item{background:var(--surface2);border-radius:8px;padding:13px}
+.op-item.full{grid-column:1/-1}
+.op-label{font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:4px}
+.op-val{font-size:13px;color:var(--text);line-height:1.5}
+.op-risks{list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.op-risks li{font-size:12.5px;color:var(--text-muted);padding-left:13px;position:relative}
+.op-risks li::before{content:'→';position:absolute;left:0;color:var(--danger);font-size:11px;top:2px}
+
+/* FINANCIAL TABLE */
+.fin-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table.fin{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+table.fin th{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--text-muted);letter-spacing:.4px;text-transform:uppercase;padding:9px 13px;text-align:right;background:var(--surface2);border-bottom:1px solid var(--border)}
+table.fin th:first-child{text-align:left}
+table.fin td{padding:8px 13px;text-align:right;font-family:var(--mono);font-size:11.5px;border-bottom:1px solid var(--border);color:var(--text)}
+table.fin td:first-child{text-align:left;font-family:var(--sans);color:var(--text-muted);font-size:12.5px}
+table.fin tr:last-child td{border-bottom:none}
+table.fin .neg{color:var(--danger)}
+table.fin .pos{color:var(--success)}
+table.fin .warn-cell{color:var(--warn)}
+table.fin .crit-cell{color:var(--danger);font-weight:500}
+
+/* BENCHMARKS */
+.bench-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.bench{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:11.5px}
+.bench-label{color:var(--text-muted);margin-bottom:2px;font-size:10.5px}
+.bench-val{color:var(--text);font-family:var(--mono)}
+.bench.ok .bench-val{color:var(--success)}
+.bench.warn .bench-val{color:var(--warn)}
+.bench.bad .bench-val{color:var(--danger)}
+
+/* FIN METRICS */
+.fin-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}
+.fin-metric{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:13px}
+.fm-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.fm-val{font-family:var(--mono);font-size:18px;font-weight:500}
+.fm-val.danger{color:var(--danger)}
+.fm-val.warn{color:var(--warn)}
+.fm-val.ok{color:var(--success)}
+
+/* FLAGS */
+.flag{border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:9px;display:flex;gap:12px}
+.flag.high{border-color:rgba(248,113,113,.28);background:var(--danger-dim)}
+.flag.medium{border-color:rgba(245,158,11,.28);background:var(--warn-dim)}
+.flag.low{background:var(--surface)}
+.flag-ico{font-size:14px;flex-shrink:0;margin-top:1px}
+.flag-title{font-weight:500;font-size:13px;margin-bottom:3px}
+.flag.high .flag-title{color:var(--danger)}
+.flag.medium .flag-title{color:var(--warn)}
+.flag-detail{font-size:12px;color:var(--text-muted);line-height:1.5}
+.no-flags{background:var(--success-dim);border:1px solid rgba(16,185,129,.22);border-radius:9px;padding:16px;color:var(--success);text-align:center;font-size:13px}
+
+/* ASSUMPTIONS */
+.assumption{border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:9px;background:var(--surface)}
+.asmp-num{font-family:var(--mono);font-size:10px;color:var(--accent-light);margin-bottom:4px}
+.asmp-title{font-weight:500;font-size:14px;margin-bottom:5px}
+.asmp-why{font-size:12px;color:var(--text-muted);margin-bottom:11px;line-height:1.5}
+.asmp-test{background:var(--surface2);border-radius:7px;padding:10px 12px;margin-bottom:9px}
+.asmp-test-label{font-size:10px;font-weight:500;color:var(--ai);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.asmp-test-val{font-size:12.5px;color:var(--text);line-height:1.5}
+.signals{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sig{border-radius:6px;padding:8px 10px;font-size:11.5px;line-height:1.4}
+.sig.pos{background:var(--success-dim);color:var(--success)}
+.sig.neg{background:var(--danger-dim);color:var(--danger)}
+.sig-lbl{font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;opacity:.7;margin-bottom:2px}
+
+/* EXPORT */
+.export-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)}
+
+/* SHARE BANNER */
+.share-banner{background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:13px}
+.share-url{font-family:var(--mono);font-size:11px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-btn{background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .1s}
+.copy-btn.copied{border-color:var(--success);color:var(--success)}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .app-header{padding:12px 16px}
+  .main{padding:32px 14px 80px}
+  .gate-title{font-size:25px}
+  .two-col,.three-col,.op-grid,.fin-metrics,.signals,.ai-row{grid-template-columns:1fr}
+  .by-credit{display:none}
+  .roles-cols{grid-template-columns:1fr 60px 90px 36px}
+  .roles-cols .dyn-cell:nth-child(4){display:none}
+}
+@media print{
+  .app-header,.btn-row,.export-row,#wizard,#loading,#restoreBanner,.share-banner{display:none!important}
+  #results{display:block!important}
+  body{background:#fff;color:#111}
+  .verdict-banner,.one-pager,.assumption,.flag{border-color:#ddd}
+}
+</style>
+</head>
+<body>
+
+<!-- RESTORE SESSION BANNER -->
+<div id="restoreBanner">
+  <span>You have an unsaved session from <strong id="savedDate"></strong>. Continue where you left off?</span>
+  <div class="banner-btns">
+    <button class="btn btn-sm btn-primary" onclick="restoreSession()">Continue</button>
+    <button class="btn btn-sm btn-ghost" onclick="clearSession()">Start fresh</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo">Founder <em>Decision Engine</em></div>
+  <div class="progress-wrap">
+    <div class="progress-steps" id="progressSteps">
+      <span class="step-dot active" id="dot0"></span><span class="step-line"></span>
+      <span class="step-dot" id="dot1"></span><span class="step-line"></span>
+      <span class="step-dot" id="dot2"></span><span class="step-line"></span>
+      <span class="step-dot" id="dot3"></span><span class="step-line"></span>
+      <span class="step-dot" id="dot4"></span><span class="step-line"></span>
+      <span class="step-dot" id="dot5"></span><span class="step-line"></span>
+      <span class="step-dot" id="dot6"></span>
+    </div>
+    <div class="step-label" id="stepLabel">Step 1 of 7</div>
+  </div>
+  <div class="by-credit">by <strong>Shay Brin</strong></div>
+</header>
+
+<!-- SAVE TOAST -->
+<div class="save-toast" id="saveToast">✓ Saved to your computer</div>
+
+<div class="app-body">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Plan</div>
+    <button class="nav-item active" id="nav0" onclick="navTo(0)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Foundation<span class="nav-item-sub">Company &amp; goal</span></span>
+    </button>
+    <button class="nav-item locked" id="nav1" onclick="navTo(1)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Positioning<span class="nav-item-sub">Customer &amp; problem</span></span>
+    </button>
+    <button class="nav-item locked" id="nav2" onclick="navTo(2)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">GTM<span class="nav-item-sub">Sales motion</span></span>
+    </button>
+    <button class="nav-item locked" id="nav3" onclick="navTo(3)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Build Plan<span class="nav-item-sub">Team &amp; timeline</span></span>
+    </button>
+    <button class="nav-item locked" id="nav4" onclick="navTo(4)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Revenue<span class="nav-item-sub">Pricing &amp; ramp</span></span>
+    </button>
+    <button class="nav-item locked" id="nav5" onclick="navTo(5)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Expenses<span class="nav-item-sub">Team &amp; costs</span></span>
+    </button>
+    <button class="nav-item locked" id="nav6" onclick="navTo(6)">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Funding<span class="nav-item-sub">Capital plan</span></span>
+    </button>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="sidebar-section nav-results">
+    <button class="nav-item locked" id="navResults" onclick="navToResults()">
+      <span class="nav-dot"></span>
+      <span class="nav-item-text">Results<span class="nav-item-sub">Plan &amp; analysis</span></span>
+    </button>
+  </div>
+  <div class="sidebar-save">
+    <button class="save-btn-side" onclick="saveToFile()">⬇ Save progress (JSON)</button>
+  </div>
+</nav>
+
+<main class="main">
+<div id="wizard">
+
+<!-- ── GATE 0: FOUNDATION ─────────────────────────────── -->
+<div class="gate active" id="gate0">
+  <div class="gate-kicker">Gate 01 — Foundation</div>
+  <h1 class="gate-title">What are you building?</h1>
+  <p class="gate-sub">Define your startup identity and the one concrete thing you need to achieve in the next 12 months.</p>
+
+  <div class="field">
+    <label>Company name *</label>
+    <input type="text" id="companyName" placeholder="e.g. Acme AI">
+  </div>
+  <div class="two-col">
+    <div class="field">
+      <label>Category *</label>
+      <select id="category">
+        <option value="">Select...</option>
+        <option>B2B SaaS</option><option>AI</option><option>Cybersecurity</option>
+        <option>Consumer</option><option>Marketplace</option><option>Services</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Current stage *</label>
+      <select id="stage">
+        <option value="">Select...</option>
+        <option>Idea</option><option>Prototype / POC</option><option>MVP</option><option>Paying Customers</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>12-month primary goal *</label>
+    <div class="opts" id="goal-opts">
+      <div class="opt" data-group="goal" data-val="First paying customers">First paying customers</div>
+      <div class="opt" data-group="goal" data-val="ARR milestone">ARR milestone</div>
+      <div class="opt" data-group="goal" data-val="Seed fundraising">Seed fundraising</div>
+      <div class="opt" data-group="goal" data-val="Product validation">Product validation</div>
+    </div>
+    <div id="goalExtra">
+      <div id="goalExtraARR" style="display:none;margin-top:10px">
+        <input type="text" id="arrTarget" placeholder="Target ARR — e.g. $500K ARR by month 12">
+      </div>
+      <div id="goalExtraValidation" style="display:none;margin-top:10px">
+        <input type="text" id="validationTarget" placeholder="Success looks like — e.g. 50 signed LOIs, 10 paid pilots, 500 signups">
+      </div>
+      <div id="goalExtraSeed" style="display:none;margin-top:10px">
+        <input type="text" id="seedTarget" placeholder="Target raise — e.g. $2M seed at $10M pre-money">
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <span></span>
+    <button class="btn btn-primary" onclick="nextGate(0)">Continue →</button>
+  </div>
+  <p class="err-msg" id="err0">Please fill in all required fields.</p>
+</div>
+
+<!-- ── GATE 1: POSITIONING ─────────────────────────────── -->
+<div class="gate" id="gate1">
+  <div class="gate-kicker">Gate 02 — Positioning</div>
+  <h1 class="gate-title">Who buys this, and why?</h1>
+  <p class="gate-sub">Vague customer definitions are the most common early-stage mistake. Be specific.</p>
+
+  <div class="two-col">
+    <div class="field">
+      <label>Customer segment *</label>
+      <select id="customerType">
+        <option value="">Select...</option>
+        <option>B2C</option><option>SMB</option><option>Mid-Market</option><option>Enterprise</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Buyer role / title *</label>
+      <input type="text" id="buyerRole" placeholder="e.g. VP Engineering, CFO">
+    </div>
+  </div>
+  <div class="field">
+    <label>Industry / vertical *</label>
+    <input type="text" id="industry" placeholder="e.g. Financial services, Healthcare, Manufacturing">
+  </div>
+  <div class="field">
+    <label>Problem statement *</label>
+    <textarea id="problem" placeholder="What specific painful problem does your customer have today? Be concrete."></textarea>
+  </div>
+  <div class="field">
+    <label>Your offer *</label>
+    <textarea id="offer" placeholder="What does your product do? How does it solve the problem above?"></textarea>
+  </div>
+  <div class="field">
+    <label>Current alternative</label>
+    <div class="opts" id="alternative-opts">
+      <div class="opt" data-group="alternative" data-val="Manual process">Manual process</div>
+      <div class="opt" data-group="alternative" data-val="Existing competitor">Existing competitor</div>
+      <div class="opt" data-group="alternative" data-val="Not solved">Not solved</div>
+      <div class="opt" data-group="alternative" data-val="Other">Other</div>
+    </div>
+  </div>
+
+  <!-- AI MARKET INTELLIGENCE -->
+  <div class="divider"></div>
+  <button class="ai-assist-btn" id="aiPositioningBtn" onclick="runAIAssist('positioning')">
+    <span>⬡</span> Get AI market intelligence — TAM, Gartner category, competitors
+  </button>
+  <div class="ai-panel" id="aiPositioningPanel">
+    <div class="ai-panel-head">AI Market Intelligence</div>
+    <div id="aiPositioningContent"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="prevGate(1)">← Back</button>
+    <button class="btn btn-primary" onclick="nextGate(1)">Continue →</button>
+  </div>
+  <p class="err-msg" id="err1">Please fill in all required fields.</p>
+</div>
+
+<!-- ── GATE 2: GTM ─────────────────────────────────────── -->
+<div class="gate" id="gate2">
+  <div class="gate-kicker">Gate 03 — GTM</div>
+  <h1 class="gate-title">How do you get to revenue?</h1>
+  <p class="gate-sub">Your GTM motion determines your burn, hiring plan, and time to first dollar. This is where most plans break.</p>
+
+  <div class="field">
+    <label>Sales motion *</label>
+    <div class="opts grid" id="salesMotion-opts">
+      <div class="opt" data-group="salesMotion" data-val="Direct sales">Direct sales</div>
+      <div class="opt" data-group="salesMotion" data-val="Self-serve">Self-serve</div>
+      <div class="opt" data-group="salesMotion" data-val="Channel / Reseller">Channel / Reseller</div>
+      <div class="opt" data-group="salesMotion" data-val="Partnerships">Partnerships</div>
+      <div class="opt" data-group="salesMotion" data-val="Marketplace">Marketplace</div>
+    </div>
+    <!-- Conditional fields -->
+    <div id="gtmConditional">
+      <div id="gtmChannelFields" style="display:none;margin-top:12px">
+        <input type="text" id="channelNames" placeholder="Channel partners — e.g. AWS Marketplace, Salesforce AppExchange, regional VARs">
+      </div>
+      <div id="gtmMarketplaceFields" style="display:none;margin-top:12px">
+        <input type="text" id="marketplaceNames" placeholder="Which marketplace(s) — e.g. AWS, Azure, Google Cloud, Salesforce AppExchange">
+      </div>
+      <div id="gtmPartnerFields" style="display:none;margin-top:12px">
+        <input type="text" id="partnerNames" placeholder="Target partners — e.g. Big 4 consulting firms, Salesforce SIs, IBM">
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="field">
+      <label>Sales cycle *</label>
+      <select id="salesCycle">
+        <option value="">Select...</option>
+        <option>Weeks</option><option>1–3 months</option><option>3–6 months</option><option>6–12 months</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>First deal type *</label>
+      <select id="firstDealType">
+        <option value="">Select...</option>
+        <option>Paid POC</option><option>Free trial</option><option>Full product contract</option><option>Services engagement</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- AI GTM ASSIST -->
+  <div class="divider"></div>
+  <button class="ai-assist-btn" id="aiGTMBtn" onclick="runAIAssist('gtm')">
+    <span>⬡</span> AI GTM analysis — acquisition tactics, CAC estimate, first 90 days
+  </button>
+  <div class="ai-panel" id="aiGTMPanel">
+    <div class="ai-panel-head">AI GTM Analysis</div>
+    <div id="aiGTMContent"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="prevGate(2)">← Back</button>
+    <button class="btn btn-primary" onclick="nextGate(2)">Continue →</button>
+  </div>
+  <p class="err-msg" id="err2">Please fill in all required fields.</p>
+</div>
+
+<!-- ── GATE 3: BUILD PLAN ──────────────────────────────── -->
+<div class="gate" id="gate3">
+  <div class="gate-kicker">Gate 04 — Build Plan</div>
+  <h1 class="gate-title">Who builds this and how?</h1>
+  <p class="gate-sub">Investors fund execution, not ideas.</p>
+
+  <div class="field">
+    <label>Who builds the product? *</label>
+    <div class="opts" id="whoBuilds-opts">
+      <div class="opt" data-group="whoBuilds" data-val="Solo founder">Solo founder</div>
+      <div class="opt" data-group="whoBuilds" data-val="Co-founder team">Co-founder team</div>
+      <div class="opt" data-group="whoBuilds" data-val="Contractors">Contractors</div>
+      <div class="opt" data-group="whoBuilds" data-val="Hired team">Hired team</div>
+    </div>
+  </div>
+  <div class="field">
+    <label>MVP timeline (months) *</label>
+    <input type="number" id="mvpTimeline" placeholder="e.g. 3" min="1" max="18" class="narrow">
+  </div>
+  <div class="field">
+    <label>Key milestones</label>
+    <div class="three-col">
+      <input type="text" id="m1" placeholder="Milestone 1">
+      <input type="text" id="m2" placeholder="Milestone 2">
+      <input type="text" id="m3" placeholder="Milestone 3">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="prevGate(3)">← Back</button>
+    <button class="btn btn-primary" onclick="nextGate(3)">Continue →</button>
+  </div>
+  <p class="err-msg" id="err3">Please fill in all required fields.</p>
+</div>
+
+<!-- ── GATE 4: REVENUE (Part A) ────────────────────────── -->
+<div class="gate" id="gate4">
+  <div class="gate-kicker">Gate 05A — Show Me the Numbers</div>
+  <h1 class="gate-title">Revenue model.</h1>
+  <p class="gate-sub">Define your pricing and customer ramp. The table below updates in real time as you type.</p>
+
+  <div class="three-col">
+    <div class="field">
+      <label>Revenue model *</label>
+      <select id="revenueModel" onchange="updateRampPreview()">
+        <option value="">Select...</option>
+        <option value="arr">ARR / Subscription</option>
+        <option value="services">Services / Project</option>
+        <option value="onetime">One-time purchase</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Annual price per customer ($) *</label>
+      <input type="number" id="avgPrice" placeholder="e.g. 24000" min="0" oninput="updateRampPreview()">
+    </div>
+    <div class="field">
+      <label>First customer month *</label>
+      <select id="firstCustomerMonth" onchange="updateRampPreview()">
+        <option value="">Month...</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+        <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
+      </select>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="field">
+      <label>Total customers by month 12 *</label>
+      <input type="number" id="totalCustomers" placeholder="e.g. 10" min="0" oninput="updateRampPreview()">
+    </div>
+    <div class="field">
+      <label>Growth pattern</label>
+      <select id="growthPattern" onchange="updateRampPreview()">
+        <option value="linear">Linear ramp</option>
+        <option value="step">Back-loaded (slow then fast)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- RAMP PREVIEW -->
+  <div class="preview-box" id="rampPreview" style="display:none">
+    <div class="preview-title">Customer & Revenue Ramp Preview</div>
+    <div class="preview-scroll">
+      <table class="mini" id="rampTable"></table>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="prevGate(4)">← Back</button>
+    <button class="btn btn-primary" onclick="nextGate(4)">Continue →</button>
+  </div>
+  <p class="err-msg" id="err4">Please fill in all required fields.</p>
+</div>
+
+<!-- ── GATE 5: EXPENSES (Part B) ───────────────────────── -->
+<div class="gate" id="gate5">
+  <div class="gate-kicker">Gate 05B — Show Me the Numbers</div>
+  <h1 class="gate-title">Team & expenses.</h1>
+  <p class="gate-sub">Add every role and cost line. Each one has a start month so the model knows when it hits your burn.</p>
+
+  <div class="field">
+    <label>Founder salary / month ($)</label>
+    <input type="number" id="founderSalary" placeholder="0 if pre-revenue / bootstrapping" min="0" oninput="updateExpensePreview()" class="narrow">
+  </div>
+
+  <div class="sec-label">Team</div>
+  <div class="dyn-table" id="rolesTable">
+    <div class="dyn-head dyn-row roles-cols">
+      <div class="dyn-cell">Role</div>
+      <div class="dyn-cell">Count</div>
+      <div class="dyn-cell">Salary/mo ($)</div>
+      <div class="dyn-cell">Start mo</div>
+      <div class="dyn-cell"></div>
+    </div>
+  </div>
+  <button class="add-row-btn" onclick="addRole()">+ Add role</button>
+
+  <div class="divider"></div>
+  <div class="sec-label">Operating Expenses</div>
+  <div class="dyn-table" id="expensesTable">
+    <div class="dyn-head dyn-row exp-cols">
+      <div class="dyn-cell">Expense</div>
+      <div class="dyn-cell">Per month ($)</div>
+      <div class="dyn-cell">Start mo</div>
+      <div class="dyn-cell"></div>
+    </div>
+  </div>
+  <button class="add-row-btn" onclick="addExpense()">+ Add expense</button>
+
+  <!-- EXPENSE PREVIEW -->
+  <div class="preview-box" id="expensePreview" style="margin-top:18px">
+    <div class="preview-title">Monthly Cost Summary</div>
+    <div class="preview-scroll">
+      <table class="mini" id="expenseTable"></table>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="prevGate(5)">← Back</button>
+    <button class="btn btn-primary" onclick="nextGate(5)">Continue →</button>
+  </div>
+  <p class="err-msg" id="err5">Please fill in all required fields.</p>
+</div>
+
+<!-- ── GATE 6: FUNDING ─────────────────────────────────── -->
+<div class="gate" id="gate6">
+  <div class="gate-kicker">Gate 06 — Funding</div>
+  <h1 class="gate-title">What is your funding plan?</h1>
+  <p class="gate-sub">Starting capital and any planned raise. This closes the cash model.</p>
+
+  <div class="two-col">
+    <div class="field">
+      <label>Starting cash ($) *</label>
+      <input type="number" id="startingCash" placeholder="e.g. 500000" min="0">
+    </div>
+    <div class="field">
+      <label>Raise type</label>
+      <select id="raiseType">
+        <option value="">No raise planned</option>
+        <option>Pre-seed</option>
+        <option>Seed</option>
+        <option>Series A</option>
+        <option>Bridge / Convertible</option>
+        <option>Grant</option>
+      </select>
+    </div>
+  </div>
+  <div class="two-col" id="raiseDetailsRow">
+    <div class="field">
+      <label>Raise amount ($)</label>
+      <input type="number" id="raiseAmount" placeholder="e.g. 2000000" min="0">
+    </div>
+    <div class="field">
+      <label>Expected close month</label>
+      <select id="raiseMonth">
+        <option value="">Select month...</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+        <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
+      </select>
+    </div>
+  </div>
+  <div class="field">
+    <label>Lead investor / target investor type</label>
+    <input type="text" id="investorTarget" placeholder="e.g. Tier-1 VC, strategic angel, family office">
+    <p class="hint">Optional. Helps the AI tailor the assumption ledger to your raise context.</p>
+  </div>
+
+  <!-- SANITY CHECK -->
+  <div class="divider"></div>
+  <button class="ai-assist-btn" id="aiSanityBtn" onclick="runAIAssist('sanity')">
+    <span>⬡</span> Pre-generate sanity check — quick AI review before full analysis
+  </button>
+  <div class="ai-panel" id="aiSanityPanel">
+    <div class="ai-panel-head">Sanity Check</div>
+    <div id="aiSanityContent"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="prevGate(6)">← Back</button>
+    <button class="btn btn-gen btn-primary" id="genBtn" onclick="generate()">
+      <span>Generate Full Plan</span><span>→</span>
+    </button>
+  </div>
+  <p class="err-msg" id="err6">Please fill in starting cash.</p>
+</div>
+
+</div><!-- /wizard -->
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p class="loading-msg">Building your founder plan...</p>
+  <div class="loading-steps">
+    <div class="lstep lactive" id="ls1">⬡ Running financial model</div>
+    <div class="lstep" id="ls2">⬡ Detecting contradictions</div>
+    <div class="lstep" id="ls3">⬡ Generating one-pager</div>
+    <div class="lstep" id="ls4">⬡ Building assumption ledger</div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+
+  <!-- SHARE BANNER -->
+  <div class="share-banner" id="shareBanner" style="display:none">
+    <span>🔗</span>
+    <span class="share-url" id="shareUrl"></span>
+    <button class="copy-btn" id="copyBtn" onclick="copyShareLink()">Copy link</button>
+  </div>
+
+  <!-- VERDICT -->
+  <div class="verdict-banner" id="r-verdict">
+    <div class="verdict-label" id="r-verdict-label">CFO Verdict</div>
+    <div class="verdict-text" id="r-verdict-text"></div>
+  </div>
+
+  <!-- Header -->
+  <h2 class="results-company" id="r-company"></h2>
+  <div class="results-meta" id="r-meta"></div>
+
+  <!-- One Pager -->
+  <div class="rsec">
+    <div class="rsec-title">01 — Founder One Pager</div>
+    <div class="one-pager" id="r-onepager"></div>
+  </div>
+
+  <!-- Financial Plan -->
+  <div class="rsec">
+    <div class="rsec-title">02 — 12-Month Financial Plan</div>
+    <div class="fin-wrap"><table class="fin" id="r-fintable"></table></div>
+    <div class="bench-row" id="r-benchmarks"></div>
+    <div class="fin-metrics" id="r-finmetrics"></div>
+  </div>
+
+  <!-- Flags -->
+  <div class="rsec">
+    <div class="rsec-title">03 — Red Flags & Contradictions</div>
+    <div id="r-flags"></div>
+  </div>
+
+  <!-- Assumptions -->
+  <div class="rsec">
+    <div class="rsec-title">04 — Assumption Ledger</div>
+    <div id="r-assumptions"></div>
+  </div>
+
+  <!-- Export -->
+  <div class="export-row">
+    <button class="btn btn-ghost btn-sm" onclick="exportXLSX()">⬇ Full Budget (Excel)</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportGammaPrompt()">⬡ Gamma Deck Prompt</button>
+    <button class="btn btn-ghost btn-sm" onclick="buildShareLink()">🔗 Share this plan</button>
+    <button class="btn btn-ghost btn-sm" onclick="window.print()">⎙ Print / PDF</button>
+    <button class="btn btn-ghost btn-sm" onclick="restartWizard()">↺ Start over</button>
+  </div>
+
+</div>
+</main>
+</div><!-- /app-body -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const state = {
+  currentGate: 0,
+  selections: {},
+  project_meta: {},
+  positioning: {},
+  gtm: {},
+  build_plan: {},
+  revenue: {},
+  expenses: { founderSalary: 0, roles: [], costs: [] },
+  funding: {},
+  financial: null,
+  aiResults: null,
+  aiMarket: null
+};
+
+const STORAGE_KEY = 'fde_session_v2';
+
+// ═══════════════════════════════════════════════════════════
+// SESSION PERSISTENCE
+// ═══════════════════════════════════════════════════════════
+function saveSession() {
+  try {
+    const saved = {
+      timestamp: Date.now(),
+      currentGate: state.currentGate,
+      selections: state.selections,
+      project_meta: state.project_meta,
+      positioning: state.positioning,
+      gtm: state.gtm,
+      build_plan: state.build_plan,
+      revenue: state.revenue,
+      expenses: state.expenses,
+      funding: state.funding,
+      fieldValues: captureFieldValues()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  } catch(e) {}
+}
+
+function captureFieldValues() {
+  const ids = ['companyName','category','stage','arrTarget','validationTarget','seedTarget',
+    'customerType','buyerRole','industry','problem','offer','salesCycle','firstDealType',
+    'channelNames','marketplaceNames','partnerNames','mvpTimeline','m1','m2','m3',
+    'revenueModel','avgPrice','firstCustomerMonth','totalCustomers','growthPattern',
+    'founderSalary','startingCash','raiseAmount','raiseMonth','raiseType','investorTarget'];
+  const vals = {};
+  ids.forEach(id => { const el = document.getElementById(id); if (el) vals[id] = el.value; });
+  return vals;
+}
+
+function restoreFieldValues(vals) {
+  if (!vals) return;
+  Object.entries(vals).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+}
+
+function loadSessionPrompt() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    const age = (Date.now() - saved.timestamp) / 1000 / 60 / 60;
+    if (age > 72) { localStorage.removeItem(STORAGE_KEY); return; }
+    const d = new Date(saved.timestamp);
+    document.getElementById('savedDate').textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('restoreBanner').style.display = 'flex';
+    window._savedSession = saved;
+  } catch(e) {}
+}
+
+function restoreSession() {
+  const saved = window._savedSession;
+  if (!saved) return;
+  document.getElementById('restoreBanner').style.display = 'none';
+  Object.assign(state, {
+    selections: saved.selections || {},
+    project_meta: saved.project_meta || {},
+    positioning: saved.positioning || {},
+    gtm: saved.gtm || {},
+    build_plan: saved.build_plan || {},
+    revenue: saved.revenue || {},
+    expenses: saved.expenses || { founderSalary: 0, roles: [], costs: [] },
+    funding: saved.funding || {}
+  });
+  maxGateReached = saved.maxGateReached || saved.currentGate || 0;
+  restoreFieldValues(saved.fieldValues);
+  // Re-apply selections
+  Object.entries(state.selections).forEach(([group, val]) => {
+    document.querySelectorAll(`.opt[data-group="${group}"]`).forEach(b => {
+      b.classList.toggle('sel', b.dataset.val === val);
+    });
+  });
+  // Re-init dynamic tables
+  (state.expenses.roles || []).forEach(r => addRole(r));
+  (state.expenses.costs || []).forEach(c => addExpense(c));
+  // Trigger previews
+  updateRampPreview();
+  updateExpensePreview();
+  showGoalExtra(state.selections.goal);
+  showGTMConditional(state.selections.salesMotion);
+  showGate(saved.currentGate || 0);
+}
+
+function clearSession() {
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('restoreBanner').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// OPTION BUTTONS
+// ═══════════════════════════════════════════════════════════
+document.querySelectorAll('.opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const group = btn.dataset.group;
+    document.querySelectorAll(`.opt[data-group="${group}"]`).forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    state.selections[group] = btn.dataset.val;
+    if (group === 'goal') showGoalExtra(btn.dataset.val);
+    if (group === 'salesMotion') showGTMConditional(btn.dataset.val);
+  });
+});
+
+function showGoalExtra(goal) {
+  const extra = document.getElementById('goalExtra');
+  extra.style.display = goal ? 'block' : 'none';
+  document.getElementById('goalExtraARR').style.display = goal === 'ARR milestone' ? 'block' : 'none';
+  document.getElementById('goalExtraValidation').style.display = goal === 'Product validation' ? 'block' : 'none';
+  document.getElementById('goalExtraSeed').style.display = goal === 'Seed fundraising' ? 'block' : 'none';
+}
+
+function showGTMConditional(motion) {
+  const wrap = document.getElementById('gtmConditional');
+  wrap.style.display = motion ? 'block' : 'none';
+  document.getElementById('gtmChannelFields').style.display = motion === 'Channel / Reseller' ? 'block' : 'none';
+  document.getElementById('gtmMarketplaceFields').style.display = motion === 'Marketplace' ? 'block' : 'none';
+  document.getElementById('gtmPartnerFields').style.display = motion === 'Partnerships' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+// Track highest gate reached (unlocks nav)
+let maxGateReached = 0;
+
+function showGate(n) {
+  document.querySelectorAll('.gate').forEach((g, i) => g.classList.toggle('active', i === n));
+  // Header dots
+  for (let i = 0; i < 7; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    if (i < n) dot.className = 'step-dot done';
+    else if (i === n) dot.className = 'step-dot active';
+    else dot.className = 'step-dot';
+  }
+  document.getElementById('stepLabel').textContent = `Step ${n + 1} of 7`;
+  // Show wizard, hide results
+  document.getElementById('wizard').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  state.currentGate = n;
+  if (n > maxGateReached) maxGateReached = n;
+  updateSidebar(n);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  saveSession();
+}
+
+function updateSidebar(activeGate, showResults) {
+  for (let i = 0; i < 7; i++) {
+    const nav = document.getElementById(`nav${i}`);
+    if (!nav) continue;
+    nav.classList.remove('active', 'done', 'locked');
+    if (showResults) {
+      nav.classList.add(i <= maxGateReached ? 'done' : 'locked');
+    } else if (i === activeGate) {
+      nav.classList.add('active');
+    } else if (i <= maxGateReached) {
+      nav.classList.add('done');
+    } else {
+      nav.classList.add('locked');
+    }
+  }
+  const rNav = document.getElementById('navResults');
+  if (rNav) {
+    rNav.classList.remove('active','done','locked');
+    if (showResults) rNav.classList.add('active');
+    else if (state.aiResults) rNav.classList.add('done');
+    else rNav.classList.add('locked');
+  }
+}
+
+function navTo(n) {
+  // Only allow navigating to gates already reached
+  if (n > maxGateReached) return;
+  // Save current gate's data before jumping
+  try { collectGate(state.currentGate); } catch(e) {}
+  showGate(n);
+}
+
+function navToResults() {
+  if (!state.aiResults) return;
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  updateSidebar(-1, true);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function prevGate(n) { showGate(n - 1); }
+
+function nextGate(n) {
+  document.getElementById(`err${n}`).style.display = 'none';
+  if (!validateGate(n)) {
+    document.getElementById(`err${n}`).style.display = 'block';
+    return;
+  }
+  collectGate(n);
+  showGate(n + 1);
+}
+
+// ═══════════════════════════════════════════════════════════
+// VALIDATION
+// ═══════════════════════════════════════════════════════════
+function validateGate(n) {
+  if (n === 0) return v('companyName') && v('category') && v('stage') && state.selections.goal;
+  if (n === 1) return v('customerType') && v('buyerRole') && v('problem') && v('offer');
+  if (n === 2) return state.selections.salesMotion && v('salesCycle') && v('firstDealType');
+  if (n === 3) return state.selections.whoBuilds && v('mvpTimeline');
+  if (n === 4) return v('revenueModel') && v('avgPrice') && v('firstCustomerMonth') && v('totalCustomers');
+  if (n === 5) return true;
+  if (n === 6) return v('startingCash');
+  return true;
+}
+function v(id) { const el = document.getElementById(id); return el && el.value && el.value.trim() !== '' && el.value !== ''; }
+function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function num(id, def = 0) { return parseFloat(val(id)) || def; }
+function int(id, def = 0) { return parseInt(val(id)) || def; }
+
+// ═══════════════════════════════════════════════════════════
+// COLLECT
+// ═══════════════════════════════════════════════════════════
+function collectGate(n) {
+  if (n === 0) {
+    state.project_meta = {
+      companyName: val('companyName'), category: val('category'), stage: val('stage'),
+      goal: state.selections.goal,
+      goalDetail: val('arrTarget') || val('validationTarget') || val('seedTarget') || ''
+    };
+  }
+  if (n === 1) {
+    state.positioning = {
+      customerType: val('customerType'), buyerRole: val('buyerRole'),
+      industry: val('industry'), problem: val('problem'),
+      offer: val('offer'), alternative: state.selections.alternative || 'Not specified'
+    };
+  }
+  if (n === 2) {
+    state.gtm = {
+      salesMotion: state.selections.salesMotion, salesCycle: val('salesCycle'),
+      firstDealType: val('firstDealType'),
+      channelNames: val('channelNames'), marketplaceNames: val('marketplaceNames'), partnerNames: val('partnerNames')
+    };
+  }
+  if (n === 3) {
+    state.build_plan = {
+      whoBuilds: state.selections.whoBuilds,
+      mvpTimeline: int('mvpTimeline', 3),
+      milestones: [val('m1'), val('m2'), val('m3')].filter(Boolean)
+    };
+  }
+  if (n === 4) {
+    state.revenue = {
+      revenueModel: val('revenueModel'), avgPrice: num('avgPrice'),
+      firstCustomerMonth: int('firstCustomerMonth', 3),
+      totalCustomers: int('totalCustomers'), growthPattern: val('growthPattern') || 'linear'
+    };
+  }
+  if (n === 5) {
+    state.expenses.founderSalary = num('founderSalary');
+    // roles and costs are already live in state via addRole/addExpense
+  }
+  if (n === 6) {
+    state.funding = {
+      startingCash: num('startingCash'), raiseType: val('raiseType'),
+      raiseAmount: num('raiseAmount'), raiseMonth: int('raiseMonth'),
+      investorTarget: val('investorTarget')
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DYNAMIC ROLES & EXPENSES
+// ═══════════════════════════════════════════════════════════
+let roleId = 0;
+let expId = 0;
+
+// Pre-populate default rows on load
+function initDefaultRows() {
+  const defaultRoles = [
+    { name: 'Developers', count: 0, salary: 10000, startMonth: 1 },
+    { name: 'Sales', count: 0, salary: 7000, startMonth: 1 },
+    { name: 'Operations', count: 0, salary: 5000, startMonth: 1 }
+  ];
+  const defaultCosts = [
+    { name: 'Cloud & Tools', amount: 500, startMonth: 1 },
+    { name: 'Legal & Accounting', amount: 1000, startMonth: 1 },
+    { name: 'Marketing', amount: 500, startMonth: 1 }
+  ];
+  defaultRoles.forEach(r => addRole(r));
+  defaultCosts.forEach(c => addExpense(c));
+}
+
+function addRole(data = {}) {
+  const id = ++roleId;
+  const rid = `role_${id}`;
+  const row = document.createElement('div');
+  row.className = 'dyn-row roles-cols';
+  row.id = rid;
+  row.innerHTML = `
+    <div class="dyn-cell"><input type="text" placeholder="Role title" value="${data.name||''}" oninput="updateExpensePreview()"></div>
+    <div class="dyn-cell"><input type="number" min="0" max="50" value="${data.count||0}" oninput="updateExpensePreview()"></div>
+    <div class="dyn-cell"><input type="number" min="0" value="${data.salary||0}" oninput="updateExpensePreview()"></div>
+    <div class="dyn-cell">
+      <select onchange="updateExpensePreview()">
+        ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>`<option value="${m}"${m===(data.startMonth||1)?' selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
+    <div class="dyn-cell"><button class="dyn-delete" onclick="removeRow('${rid}','roles')">✕</button></div>
+  `;
+  document.getElementById('rolesTable').appendChild(row);
+  syncRoles();
+}
+
+function addExpense(data = {}) {
+  const id = ++expId;
+  const eid = `exp_${id}`;
+  const row = document.createElement('div');
+  row.className = 'dyn-row exp-cols';
+  row.id = eid;
+  row.innerHTML = `
+    <div class="dyn-cell"><input type="text" placeholder="Expense name" value="${data.name||''}" oninput="updateExpensePreview()"></div>
+    <div class="dyn-cell"><input type="number" min="0" value="${data.amount||0}" oninput="updateExpensePreview()"></div>
+    <div class="dyn-cell">
+      <select onchange="updateExpensePreview()">
+        ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>`<option value="${m}"${m===(data.startMonth||1)?' selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
+    <div class="dyn-cell"><button class="dyn-delete" onclick="removeRow('${eid}','costs')">✕</button></div>
+  `;
+  document.getElementById('expensesTable').appendChild(row);
+  syncCosts();
+}
+
+function removeRow(id, type) {
+  document.getElementById(id)?.remove();
+  if (type === 'roles') syncRoles(); else syncCosts();
+  updateExpensePreview();
+}
+
+function syncRoles() {
+  state.expenses.roles = [];
+  document.querySelectorAll('#rolesTable .dyn-row:not(.dyn-head)').forEach(row => {
+    const inputs = row.querySelectorAll('input,select');
+    state.expenses.roles.push({
+      name: inputs[0].value, count: parseInt(inputs[1].value)||0,
+      salary: parseFloat(inputs[2].value)||0, startMonth: parseInt(inputs[3].value)||1
+    });
+  });
+}
+
+function syncCosts() {
+  state.expenses.costs = [];
+  document.querySelectorAll('#expensesTable .dyn-row:not(.dyn-head)').forEach(row => {
+    const inputs = row.querySelectorAll('input,select');
+    state.expenses.costs.push({
+      name: inputs[0].value, amount: parseFloat(inputs[1].value)||0,
+      startMonth: parseInt(inputs[2].value)||1
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// FINANCIAL MODEL
+// ═══════════════════════════════════════════════════════════
+function buildCustomerRamp(fcm, tc, pattern) {
+  const ramp = Array(12).fill(0);
+  if (!tc || !fcm) return ramp;
+  const activeMonths = Math.max(1, 13 - fcm);
+  if (pattern === 'linear') {
+    for (let m = fcm - 1; m < 12; m++) {
+      ramp[m] = Math.min(tc, Math.round(tc * (m - fcm + 2) / activeMonths));
+    }
+  } else {
+    const mid = fcm - 1 + Math.floor(activeMonths / 2);
+    for (let m = fcm - 1; m < 12; m++) {
+      if (m <= mid) ramp[m] = Math.round(tc * 0.2 * (m - fcm + 2) / Math.max(1, mid - fcm + 2));
+      else ramp[m] = Math.round(tc * 0.2 + tc * 0.8 * (m - mid) / Math.max(1, 11 - mid));
+    }
+  }
+  ramp[11] = tc;
+  return ramp;
+}
+
+function monthlyExpenses(month, exp) {
+  let cost = exp.founderSalary || 0;
+  (exp.roles || []).forEach(r => { if (month >= r.startMonth) cost += r.count * r.salary; });
+  (exp.costs || []).forEach(c => { if (month >= c.startMonth) cost += c.amount; });
+  return cost;
+}
+
+function calculateFinancialModel() {
+  const rev = state.revenue;
+  const exp = state.expenses;
+  const fund = state.funding;
+  const mRevPerCust = rev.revenueModel === 'arr' ? rev.avgPrice / 12 : rev.avgPrice;
+  const ramp = buildCustomerRamp(rev.firstCustomerMonth, rev.totalCustomers, rev.growthPattern);
+  const rows = [];
+  let cash = fund.startingCash || 0;
+
+  for (let m = 1; m <= 12; m++) {
+    if (m === fund.raiseMonth && fund.raiseAmount > 0) cash += fund.raiseAmount;
+    const revenue = ramp[m-1] * mRevPerCust;
+    const expenses = monthlyExpenses(m, exp);
+    const burn = expenses - revenue;
+    cash -= burn;
+    rows.push({ month: m, customers: ramp[m-1], revenue, expenses, burn, cashBalance: cash });
+  }
+
+  const avgBurn = rows.reduce((s,r) => s + r.burn, 0) / 12;
+  const runwayRow = rows.findIndex(r => r.cashBalance < 0);
+  const runway = runwayRow === -1 ? '>12' : runwayRow + 1;
+  const totalRevenue = rows.reduce((s,r) => s + r.revenue, 0);
+  const cashRequired = Math.max(0, -Math.min(...rows.map(r => r.cashBalance)));
+  return { rows, ramp, summary: { avgBurn, runway, totalRevenue, cashRequired } };
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIVE PREVIEWS
+// ═══════════════════════════════════════════════════════════
+function updateRampPreview() {
+  const fcm = int('firstCustomerMonth');
+  const tc = int('totalCustomers');
+  const price = num('avgPrice');
+  const model = val('revenueModel');
+  const pattern = val('growthPattern') || 'linear';
+  if (!tc || !fcm || !price || !model) { document.getElementById('rampPreview').style.display = 'none'; return; }
+  const ramp = buildCustomerRamp(fcm, tc, pattern);
+  const mRev = model === 'arr' ? price / 12 : price;
+  const maxRev = Math.max(...ramp.map(c => c * mRev), 1);
+  let html = '<thead><tr><th>Month</th><th>Customers</th><th>Monthly Revenue</th><th>Ramp</th></tr></thead><tbody>';
+  ramp.forEach((c, i) => {
+    const rev = c * mRev;
+    const barW = Math.max(2, Math.round((rev / maxRev) * 100));
+    const cls = rev > 0 ? 'pos' : 'zero';
+    html += `<tr><td>Mo ${i+1}</td><td>${c}</td>
+      <td class="${cls}">${rev > 0 ? '$'+Math.round(rev).toLocaleString() : '—'}</td>
+      <td><div class="bar-cell"><div class="mini-bar" style="width:${barW}px"></div></div></td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('rampTable').innerHTML = html;
+  document.getElementById('rampPreview').style.display = 'block';
+}
+
+function updateExpensePreview() {
+  syncRoles(); syncCosts();
+  const founderSal = num('founderSalary');
+  let html = '<thead><tr><th>Month</th><th>Team</th><th>Operating</th><th>Total Burn</th></tr></thead><tbody>';
+  let prevTotal = 0;
+  for (let m = 1; m <= 12; m++) {
+    let teamCost = founderSal;
+    (state.expenses.roles||[]).forEach(r => { if (m >= r.startMonth) teamCost += r.count * r.salary; });
+    let opCost = 0;
+    (state.expenses.costs||[]).forEach(c => { if (m >= c.startMonth) opCost += c.amount; });
+    const total = teamCost + opCost;
+    const changed = total !== prevTotal;
+    html += `<tr>
+      <td>Mo ${m}</td>
+      <td>$${Math.round(teamCost).toLocaleString()}</td>
+      <td>$${Math.round(opCost).toLocaleString()}</td>
+      <td style="${changed&&m>1?'color:var(--warn)':''}">$${Math.round(total).toLocaleString()}</td>
+    </tr>`;
+    prevTotal = total;
+  }
+  html += '</tbody>';
+  document.getElementById('expenseTable').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTRADICTION DETECTION
+// ═══════════════════════════════════════════════════════════
+function detectContradictions(fin) {
+  const flags = [];
+  const { positioning: pos, gtm, build_plan: bp, revenue: rev, expenses: exp, funding: fund } = state;
+
+  if (pos.customerType === 'Enterprise' && rev.firstCustomerMonth <= 2)
+    flags.push({ severity:'high', title:'Enterprise close timeline is not credible', detail:`Enterprise in month ${rev.firstCustomerMonth} with a ${gtm.salesCycle} sales cycle requires a signed LOI today. Investors will ask.` });
+
+  if (['3–6 months','6–12 months'].includes(gtm.salesCycle) && rev.firstCustomerMonth <= 3)
+    flags.push({ severity:'high', title:'Sales cycle conflicts with first revenue timing', detail:`A ${gtm.salesCycle} cycle and month-${rev.firstCustomerMonth} revenue means pipeline must exist today. If starting from zero, push the first customer month forward.` });
+
+  const salesPeople = (exp.roles||[]).filter(r => r.name.toLowerCase().includes('sale') || r.name.toLowerCase().includes('sdr') || r.name.toLowerCase().includes('bdr')).reduce((s,r) => s+r.count, 0);
+  if (gtm.salesMotion === 'Direct sales' && rev.totalCustomers > 8 && salesPeople < 1)
+    flags.push({ severity:'high', title:'Direct sales motion with no sales headcount', detail:`${rev.totalCustomers} customers via direct sales with no dedicated sales capacity. A solo founder can realistically close 3-6 deals per year, not ${rev.totalCustomers}.` });
+
+  const mktCost = (exp.costs||[]).find(c => c.name.toLowerCase().includes('market'))?.amount || 0;
+  if (gtm.salesMotion === 'Self-serve' && mktCost < 200)
+    flags.push({ severity:'high', title:'Self-serve with no acquisition budget', detail:'Self-serve needs traffic. Zero marketing spend assumes viral growth or existing audience. If neither exists, your model has no acquisition engine.' });
+
+  if (pos.customerType === 'Enterprise' && rev.avgPrice < 20000)
+    flags.push({ severity:'medium', title:`$${rev.avgPrice.toLocaleString()} ACV is low for enterprise`, detail:'Enterprise procurement overhead rarely makes sense below $20K ACV. You are likely underpricing or the segment classification is wrong.' });
+
+  if (bp.whoBuilds === 'Solo founder' && pos.customerType === 'Enterprise')
+    flags.push({ severity:'medium', title:'Solo founder pursuing enterprise buyers', detail:'Enterprise evaluates team credibility. A solo founder splitting product and sales creates a pattern-match failure for most enterprise buyers and investors.' });
+
+  if (rev.revenueModel === 'services' && state.project_meta.goal === 'ARR milestone')
+    flags.push({ severity:'medium', title:'Services revenue does not count as ARR', detail:'Investors exclude non-recurring revenue from ARR. If your goal is an ARR milestone, the revenue model needs to be subscription.' });
+
+  if (typeof fin.summary.runway === 'number' && fin.summary.runway <= 9)
+    flags.push({ severity:'high', title:`Cash runway ends at month ${fin.summary.runway}`, detail:`You run out of cash before reaching your goal. Either reduce burn, raise earlier, or extend the timeline. This is the most critical issue in your plan.` });
+
+  if (state.project_meta.stage === 'Idea' && fin.summary.avgBurn > 30000)
+    flags.push({ severity:'medium', title:`Burning $${Math.round(fin.summary.avgBurn/1000)}K/mo at idea stage`, detail:'Idea stage capital should go to validation, not headcount. High burn before PMF means you can run out of money before finding the product that works.' });
+
+  if (gtm.firstDealType === 'Paid POC' && rev.totalCustomers > 15)
+    flags.push({ severity:'low', title:'POC motion at scale requires significant resources', detail:`POC-led sales take 2-4 weeks of engineering per prospect. ${rev.totalCustomers} customers this way means running multiple POCs simultaneously.` });
+
+  return flags;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BENCHMARKS
+// ═══════════════════════════════════════════════════════════
+const BENCHMARKS = {
+  Enterprise:  { acvRange:'$24K–$150K', firstCustRange:'4–8 months', burnRange:'$40K–$120K/mo' },
+  'Mid-Market':{ acvRange:'$6K–$30K',  firstCustRange:'2–5 months', burnRange:'$20K–$60K/mo' },
+  SMB:         { acvRange:'$1K–$8K',   firstCustRange:'1–3 months', burnRange:'$10K–$30K/mo' },
+  B2C:         { acvRange:'$50–$500',  firstCustRange:'immediate',  burnRange:'$15K–$50K/mo' }
+};
+
+function renderBenchmarks() {
+  const seg = state.positioning.customerType;
+  const bm = BENCHMARKS[seg];
+  if (!bm) return '';
+  const rev = state.revenue;
+  const fin = state.financial;
+  const acvOk = seg === 'Enterprise' ? rev.avgPrice >= 20000 : seg === 'Mid-Market' ? rev.avgPrice >= 5000 : true;
+  const custOk = rev.firstCustomerMonth <= 6;
+  return `
+    <div class="bench ${acvOk?'ok':'warn'}"><div class="bench-label">Your ACV vs ${seg} typical</div><div class="bench-val">$${rev.avgPrice.toLocaleString()} | Typical: ${bm.acvRange}</div></div>
+    <div class="bench ${custOk?'ok':'warn'}"><div class="bench-label">First customer timing</div><div class="bench-val">Month ${rev.firstCustomerMonth} | Typical: ${bm.firstCustRange}</div></div>
+    <div class="bench"><div class="bench-label">Typical ${seg} burn range</div><div class="bench-val">${bm.burnRange}</div></div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI ASSIST
+// ═══════════════════════════════════════════════════════════
+async function runAIAssist(mode) {
+  collectGate(state.currentGate);
+  const btnId = { positioning:'aiPositioningBtn', gtm:'aiGTMBtn', sanity:'aiSanityBtn' }[mode];
+  const panelId = { positioning:'aiPositioningPanel', gtm:'aiGTMPanel', sanity:'aiSanityPanel' }[mode];
+  const contentId = { positioning:'aiPositioningContent', gtm:'aiGTMContent', sanity:'aiSanityContent' }[mode];
+
+  const btn = document.getElementById(btnId);
+  const panel = document.getElementById(panelId);
+  const content = document.getElementById(contentId);
+  btn.disabled = true;
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = `<span class="ai-spinner"></span> Analyzing...`;
+  panel.classList.add('visible');
+  content.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0">Thinking...</div>`;
+
+  const prompts = {
+    positioning: {
+      system: `You are a market analyst and startup strategist. Return ONLY valid JSON, no markdown:
+{"market_category":"Gartner or analyst category name","tam":"TAM estimate with source logic","competitive_landscape":[{"name":"competitor name","positioning":"one-line positioning"}],"positioning_suggestion":"one improved version of the founder's positioning statement"}`,
+      user: `Company: ${state.project_meta.companyName}. Category: ${state.project_meta.category}. Customer: ${state.positioning.customerType} ${state.positioning.buyerRole} in ${state.positioning.industry}. Problem: ${state.positioning.problem}. Offer: ${state.positioning.offer}.`
+    },
+    gtm: {
+      system: `You are a GTM strategist. Return ONLY valid JSON, no markdown:
+{"assessment":"2-sentence GTM motion assessment","tactics":[{"tactic":"tactic name","detail":"one sentence on execution","timeline":"when to start"}],"cac_estimate":"realistic CAC range for this motion and segment","first90days":"what the founder should do in the first 90 days, 2-3 sentences"}`,
+      user: `Company: ${state.project_meta.companyName}. Segment: ${state.positioning.customerType}. Motion: ${state.gtm.salesMotion}. Cycle: ${state.gtm.salesCycle}. First deal: ${state.gtm.firstDealType}. Industry: ${state.positioning.industry}.`
+    },
+    sanity: {
+      system: `You are a CFO reviewing a startup's financial inputs. Return ONLY valid JSON, no markdown:
+{"verdict":"one sentence overall assessment","key_risk":"the single most important risk in these inputs","recommendation":"one concrete thing to change before generating the full plan","confidence":"high or medium or low"}`,
+      user: `Stage: ${state.project_meta.stage}. Goal: ${state.project_meta.goal}. ACV: $${state.revenue.avgPrice}. First customer: month ${state.revenue.firstCustomerMonth}. Total customers 12mo: ${state.revenue.totalCustomers}. Starting cash: $${state.funding.startingCash}. Raise: $${state.funding.raiseAmount||0} in month ${state.funding.raiseMonth||'none'}. Sales motion: ${state.gtm.salesMotion}. Segment: ${state.positioning.customerType}.`
+    }
+  };
+
+  try {
+    const p = prompts[mode];
+    const resp = await fetch('/api/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: p.system, messages: [{ role:'user', content: p.user }], max_tokens: 1000 })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    if (mode === 'positioning') {
+      state.aiMarket = parsed;
+      content.innerHTML = `
+        <div class="ai-row">
+          <div class="ai-item"><div class="ai-label">Market Category</div><div class="ai-val">${parsed.market_category}</div></div>
+          <div class="ai-item"><div class="ai-label">TAM Estimate</div><div class="ai-val">${parsed.tam}</div></div>
+          <div class="ai-item full"><div class="ai-label">Competitors</div>
+            <ul class="ai-list">${(parsed.competitive_landscape||[]).map(c=>`<li><strong>${c.name}</strong> — ${c.positioning}</li>`).join('')}</ul>
+          </div>
+          <div class="ai-item full"><div class="ai-label">Positioning Suggestion</div><div class="ai-val">${parsed.positioning_suggestion}</div></div>
+        </div>`;
+    }
+    if (mode === 'gtm') {
+      content.innerHTML = `
+        <div class="ai-row">
+          <div class="ai-item full"><div class="ai-label">Assessment</div><div class="ai-val">${parsed.assessment}</div></div>
+          <div class="ai-item"><div class="ai-label">CAC Estimate</div><div class="ai-val">${parsed.cac_estimate}</div></div>
+          <div class="ai-item"><div class="ai-label">First 90 Days</div><div class="ai-val">${parsed.first90days}</div></div>
+          <div class="ai-item full"><div class="ai-label">Top Acquisition Tactics</div>
+            <ul class="ai-list">${(parsed.tactics||[]).map(t=>`<li><strong>${t.tactic}</strong> — ${t.detail} (${t.timeline})</li>`).join('')}</ul>
+          </div>
+        </div>`;
+    }
+    if (mode === 'sanity') {
+      const col = parsed.confidence === 'high' ? 'var(--success)' : parsed.confidence === 'medium' ? 'var(--warn)' : 'var(--danger)';
+      content.innerHTML = `
+        <div class="ai-row">
+          <div class="ai-item full"><div class="ai-label">Overall</div><div class="ai-val">${parsed.verdict}</div></div>
+          <div class="ai-item"><div class="ai-label">Key Risk</div><div class="ai-val" style="color:var(--danger)">${parsed.key_risk}</div></div>
+          <div class="ai-item"><div class="ai-label">Before You Generate</div><div class="ai-val">${parsed.recommendation}</div></div>
+        </div>
+        <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:${col}">Confidence: ${parsed.confidence.toUpperCase()}</div>`;
+    }
+  } catch(e) {
+    content.innerHTML = `<div style="color:var(--danger);font-size:12px">Analysis failed: ${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = origHTML;
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE
+// ═══════════════════════════════════════════════════════════
+async function generate() {
+  collectGate(6);
+  document.getElementById('err6').style.display = 'none';
+  if (!validateGate(6)) { document.getElementById('err6').style.display = 'block'; return; }
+  state.financial = calculateFinancialModel();
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  const steps = [['ls1',400],['ls2',1400],['ls3',2600],['ls4',3800]];
+  steps.forEach(([id, delay], i) => {
+    setTimeout(() => {
+      if (i > 0) document.getElementById(steps[i-1][0]).className = 'lstep ldone';
+      document.getElementById(id).className = 'lstep lactive';
+    }, delay);
+  });
+
+  const sys = `You are a CFO and startup advisor with 15+ years reviewing early-stage companies. You are direct, precise, and honest.
+Return ONLY valid JSON, no markdown, no preamble:
+{
+  "verdict": "one brutal honest sentence about whether this plan is viable and what the main condition is",
+  "verdict_sentiment": "fundable or cautious or broken",
+  "one_pager": {
+    "what_we_do": "1-2 sentence company description as a pitch",
+    "customer": "specific customer and buyer",
+    "problem": "concrete problem statement",
+    "offer": "what the product does and key differentiation",
+    "gtm": "go-to-market approach and how first deals close",
+    "top_risks": ["specific risk 1", "specific risk 2", "specific risk 3"]
+  },
+  "additional_contradictions": [
+    { "title": "short title", "detail": "specific to their inputs", "severity": "high or medium or low" }
+  ],
+  "assumptions": [
+    {
+      "title": "specific assumption statement",
+      "why": "why this matters to success or failure",
+      "test": "specific 14-day test under $500",
+      "positive_signal": "concrete success indicator",
+      "negative_signal": "concrete failure indicator"
+    }
+  ]
+}
+Generate 5-7 assumptions specific to this startup. Tests must be actionable in 14 days for under $500.`;
+
+  const usr = JSON.stringify({
+    company: state.project_meta,
+    positioning: state.positioning,
+    gtm: state.gtm,
+    build_plan: state.build_plan,
+    market_context: state.aiMarket || null,
+    financials: {
+      revenueModel: state.revenue.revenueModel,
+      avgPrice: state.revenue.avgPrice,
+      firstCustomerMonth: state.revenue.firstCustomerMonth,
+      totalCustomers12m: state.revenue.totalCustomers,
+      startingCash: state.funding.startingCash,
+      raiseType: state.funding.raiseType,
+      raiseAmount: state.funding.raiseAmount,
+      projectedRunway: state.financial.summary.runway,
+      avgMonthlyBurn: Math.round(state.financial.summary.avgBurn),
+      totalRevenue12m: Math.round(state.financial.summary.totalRevenue)
+    }
+  });
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ system: sys, messages:[{role:'user',content:usr}], max_tokens:4000 })
+    });
+    if (!resp.ok) throw new Error(`API ${resp.status}`);
+    const data = await resp.json();
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    state.aiResults = parsed;
+    document.getElementById('ls4').className = 'lstep ldone';
+    await new Promise(r => setTimeout(r, 350));
+    renderResults(parsed);
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('wizard').style.display = 'block';
+    document.getElementById('err6').textContent = `Generation failed: ${e.message}`;
+    document.getElementById('err6').style.display = 'block';
+    showGate(6);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════════════
+function renderResults(ai) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  const fin = state.financial;
+  const pm = state.project_meta;
+  const mi = state.revenue;
+
+  // Verdict
+  const vb = document.getElementById('r-verdict');
+  vb.className = `verdict-banner ${ai.verdict_sentiment || 'cautious'}`;
+  document.getElementById('r-verdict-label').textContent =
+    ai.verdict_sentiment === 'fundable' ? '✓ CFO Verdict' : ai.verdict_sentiment === 'broken' ? '✕ CFO Verdict' : '◈ CFO Verdict';
+  document.getElementById('r-verdict-text').textContent = ai.verdict;
+
+  // Header
+  document.getElementById('r-company').textContent = pm.companyName;
+  document.getElementById('r-meta').innerHTML = `
+    <span><span class="badge">${pm.stage}</span></span>
+    <span>${pm.category}</span>
+    <span>${state.positioning.customerType} • ${state.positioning.industry}</span>
+    <span>Goal: ${pm.goal}${pm.goalDetail ? ' — ' + pm.goalDetail : ''}</span>
+    <span style="color:var(--text-dim)">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+  `;
+
+  // One Pager
+  const op = ai.one_pager;
+  document.getElementById('r-onepager').innerHTML = `
+    <p class="op-intro">${op.what_we_do}</p>
+    <div class="op-grid">
+      <div class="op-item"><div class="op-label">Customer & Buyer</div><div class="op-val">${op.customer}</div></div>
+      <div class="op-item"><div class="op-label">Problem</div><div class="op-val">${op.problem}</div></div>
+      <div class="op-item full"><div class="op-label">Offer</div><div class="op-val">${op.offer}</div></div>
+      <div class="op-item"><div class="op-label">GTM Motion</div><div class="op-val">${op.gtm}</div></div>
+      <div class="op-item"><div class="op-label">Pricing</div><div class="op-val">$${mi.avgPrice.toLocaleString()} ACV • ${mi.totalCustomers} customers target</div></div>
+      <div class="op-item full"><div class="op-label">Top Risks</div>
+        <ul class="op-risks">${(op.top_risks||[]).map(r=>`<li>${r}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+
+  // Financial table
+  const fmt = n => n === 0 ? '—' : (n < 0 ? `-$${Math.abs(Math.round(n)).toLocaleString()}` : `$${Math.round(n).toLocaleString()}`);
+  const fmtBurn = n => n > 0 ? `<span class="neg">-$${Math.round(n).toLocaleString()}</span>` : `<span class="pos">+$${Math.abs(Math.round(n)).toLocaleString()}</span>`;
+  const fmtCash = (n) => {
+    const cls = n < 0 ? 'crit-cell' : n < fin.summary.avgBurn * 2 ? 'warn-cell' : '';
+    return `<span class="${cls}">${fmt(n)}</span>`;
+  };
+
+  document.getElementById('r-fintable').innerHTML = `
+    <thead><tr>
+      <th>Month</th><th>Customers</th><th>Revenue</th><th>Expenses</th><th>Burn</th><th>Cash Balance</th>
+    </tr></thead>
+    <tbody>${fin.rows.map(r => `<tr>
+      <td>Mo ${r.month}</td><td>${r.customers}</td>
+      <td>${r.revenue > 0 ? `<span class="pos">$${Math.round(r.revenue).toLocaleString()}</span>` : '—'}</td>
+      <td>$${Math.round(r.expenses).toLocaleString()}</td>
+      <td>${fmtBurn(r.burn)}</td>
+      <td>${fmtCash(r.cashBalance)}</td>
+    </tr>`).join('')}</tbody>`;
+
+  document.getElementById('r-benchmarks').innerHTML = renderBenchmarks();
+
+  const s = fin.summary;
+  const rc = s.runway === '>12' ? 'ok' : s.runway >= 9 ? 'ok' : s.runway >= 6 ? 'warn' : 'danger';
+  document.getElementById('r-finmetrics').innerHTML = `
+    <div class="fin-metric"><div class="fm-label">Avg Monthly Burn</div><div class="fm-val">$${Math.abs(Math.round(s.avgBurn)).toLocaleString()}</div></div>
+    <div class="fin-metric"><div class="fm-label">Runway</div><div class="fm-val ${rc}">${s.runway === '>12' ? '>12 mo' : `Mo ${s.runway}`}</div></div>
+    <div class="fin-metric"><div class="fm-label">12-Mo Revenue</div><div class="fm-val ok">$${Math.round(s.totalRevenue).toLocaleString()}</div></div>
+    <div class="fin-metric"><div class="fm-label">Cash Required</div><div class="fm-val ${s.cashRequired > 0 ? 'danger':'ok'}">${s.cashRequired > 0 ? '$'+Math.round(s.cashRequired).toLocaleString() : 'Funded'}</div></div>
+  `;
+
+  // Flags
+  const localFlags = detectContradictions(fin);
+  const aiFlags = (ai.additional_contradictions||[]).slice(0,3);
+  const allFlags = [...localFlags, ...aiFlags];
+  const ico = {high:'⚠',medium:'◈',low:'◇'};
+  document.getElementById('r-flags').innerHTML = allFlags.length === 0
+    ? `<div class="no-flags">No major contradictions detected. That is unusual — double-check your assumptions.</div>`
+    : allFlags.map(f=>`<div class="flag ${f.severity}"><div class="flag-ico">${ico[f.severity]}</div><div><div class="flag-title">${f.title}</div><div class="flag-detail">${f.detail}</div></div></div>`).join('');
+
+  // Assumptions
+  document.getElementById('r-assumptions').innerHTML = (ai.assumptions||[]).map((a,i)=>`
+    <div class="assumption">
+      <div class="asmp-num">Assumption ${i+1}</div>
+      <div class="asmp-title">${a.title}</div>
+      <div class="asmp-why">${a.why}</div>
+      <div class="asmp-test"><div class="asmp-test-label">14-Day Validation Test</div><div class="asmp-test-val">${a.test}</div></div>
+      <div class="signals">
+        <div class="sig pos"><div class="sig-lbl">Positive signal</div>${a.positive_signal}</div>
+        <div class="sig neg"><div class="sig-lbl">Negative signal</div>${a.negative_signal}</div>
+      </div>
+    </div>`).join('');
+
+  window.scrollTo({top:0,behavior:'smooth'});
+  maxGateReached = 6;
+  updateSidebar(-1, true);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT XLSX
+// ═══════════════════════════════════════════════════════════
+function exportXLSX() {
+  if (!state.financial || !window.XLSX) return;
+  const wb = XLSX.utils.book_new();
+  const fin = state.financial;
+
+  // Sheet 1: Revenue Model
+  const revData = [['Month','Customers','Monthly Revenue','Cumulative Revenue']];
+  let cumRev = 0;
+  fin.rows.forEach(r => { cumRev += r.revenue; revData.push([`Month ${r.month}`, r.customers, Math.round(r.revenue), Math.round(cumRev)]); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(revData), 'Revenue');
+
+  // Sheet 2: Expenses
+  const expData = [['Month','Team Cost','Operating Cost','Founder Salary','Total Expenses']];
+  const exp = state.expenses;
+  for (let m = 1; m <= 12; m++) {
+    let team = 0; (exp.roles||[]).forEach(r => { if (m >= r.startMonth) team += r.count * r.salary; });
+    let ops = 0; (exp.costs||[]).forEach(c => { if (m >= c.startMonth) ops += c.amount; });
+    expData.push([`Month ${m}`, Math.round(team), Math.round(ops), exp.founderSalary||0, Math.round(team+ops+(exp.founderSalary||0))]);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expData), 'Expenses');
+
+  // Sheet 3: P&L
+  const plData = [['Month','Revenue','Total Costs','Gross Profit','EBITDA Margin %']];
+  fin.rows.forEach(r => {
+    const gp = r.revenue - r.expenses;
+    const margin = r.revenue > 0 ? Math.round((gp/r.revenue)*100) : 0;
+    plData.push([`Month ${r.month}`, Math.round(r.revenue), Math.round(r.expenses), Math.round(gp), margin]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(plData), 'P&L');
+
+  // Sheet 4: Cash Flow
+  const cfData = [['Month','Opening Cash','Revenue','Expenses','Net Burn','Closing Cash']];
+  let openCash = state.funding.startingCash;
+  fin.rows.forEach(r => {
+    cfData.push([`Month ${r.month}`, Math.round(openCash), Math.round(r.revenue), Math.round(r.expenses), Math.round(r.burn), Math.round(r.cashBalance)]);
+    openCash = r.cashBalance;
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cfData), 'Cash Flow');
+
+  // Sheet 5: Assumptions
+  if (state.aiResults?.assumptions) {
+    const asmpData = [['#','Assumption','Why It Matters','14-Day Test','Positive Signal','Negative Signal']];
+    state.aiResults.assumptions.forEach((a,i) => {
+      asmpData.push([i+1, a.title, a.why, a.test, a.positive_signal, a.negative_signal]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(asmpData), 'Assumptions');
+  }
+
+  // Sheet 6: Gamma Prompt
+  const gammaText = buildGammaPrompt();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[gammaText]]), 'Gamma Prompt');
+
+  XLSX.writeFile(wb, `${state.project_meta.companyName || 'startup'}-founder-plan.xlsx`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// GAMMA PROMPT
+// ═══════════════════════════════════════════════════════════
+function buildGammaPrompt() {
+  const pm = state.project_meta;
+  const pos = state.positioning;
+  const ai = state.aiResults;
+  const fin = state.financial;
+  const op = ai?.one_pager || {};
+
+  return `PRESENTATION BRIEF FOR GAMMA AI
+Create a compelling 10-slide investor pitch deck for ${pm.companyName}.
+Style: Modern, minimal, data-driven. Dark background with teal accents. No stock photos.
+
+SLIDE 1 — COVER
+Company: ${pm.companyName}
+Tagline: ${op.what_we_do || pos.problem}
+Stage: ${pm.stage} | Category: ${pm.category}
+
+SLIDE 2 — PROBLEM
+${op.problem || pos.problem}
+Current alternative: ${pos.alternative}
+
+SLIDE 3 — SOLUTION
+${op.offer || pos.offer}
+Key differentiation: explain why this is 10x better than the alternative
+
+SLIDE 4 — MARKET OPPORTUNITY
+${state.aiMarket ? `Market: ${state.aiMarket.market_category}
+TAM: ${state.aiMarket.tam}` : `Target: ${pos.customerType} ${pos.buyerRole} in ${pos.industry}`}
+
+SLIDE 5 — PRODUCT
+Show how the product works in 3 steps. Use screenshots or mockup placeholders.
+
+SLIDE 6 — GO TO MARKET
+Motion: ${state.gtm.salesMotion}
+First deal type: ${state.gtm.firstDealType}
+Sales cycle: ${state.gtm.salesCycle}
+${op.gtm || ''}
+
+SLIDE 7 — BUSINESS MODEL
+Revenue model: ${state.revenue.revenueModel}
+ACV: $${state.revenue.avgPrice.toLocaleString()}
+Target: ${state.revenue.totalCustomers} customers by month 12
+12-month revenue: $${Math.round(fin?.summary.totalRevenue || 0).toLocaleString()}
+
+SLIDE 8 — TRACTION & MILESTONES
+Stage: ${pm.stage}
+12-month goal: ${pm.goal}${pm.goalDetail ? ' — ' + pm.goalDetail : ''}
+Key milestones: ${state.build_plan.milestones?.join(' → ') || 'To be defined'}
+
+SLIDE 9 — TEAM
+${state.build_plan.whoBuilds}
+Add team bios here
+
+SLIDE 10 — THE ASK
+${state.funding.raiseType ? `Raising: ${state.funding.raiseType} — $${(state.funding.raiseAmount||0).toLocaleString()}` : 'Funding ask: to be defined'}
+Use of funds: breakdown of how the raise will be deployed
+Contact: [founder email]
+
+TOP RISKS TO ACKNOWLEDGE:
+${(op.top_risks||[]).map((r,i) => `${i+1}. ${r}`).join('\n')}
+
+DESIGN NOTES:
+- Use bold numbers as hero elements on each slide
+- Keep text minimal — max 30 words per slide
+- Every slide needs one clear takeaway sentence at the bottom
+- Use consistent iconography throughout`;
+}
+
+function exportGammaPrompt() {
+  const text = buildGammaPrompt();
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${state.project_meta.companyName || 'startup'}-gamma-prompt.txt`;
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHAREABLE URL
+// ═══════════════════════════════════════════════════════════
+function buildShareLink() {
+  try {
+    const shareData = {
+      inputs: {
+        project_meta: state.project_meta, positioning: state.positioning,
+        gtm: state.gtm, build_plan: state.build_plan,
+        revenue: state.revenue, expenses: state.expenses, funding: state.funding
+      },
+      results: state.aiResults,
+      financial: state.financial
+    };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));
+    const url = `${location.origin}${location.pathname}#plan=${encoded}`;
+    document.getElementById('shareUrl').textContent = url;
+    document.getElementById('shareBanner').style.display = 'flex';
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(e) { alert('Could not generate share link.'); }
+}
+
+function copyShareLink() {
+  const url = document.getElementById('shareUrl').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function checkShareLink() {
+  const hash = location.hash;
+  if (!hash.startsWith('#plan=')) return;
+  try {
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(hash.slice(6)))));
+    Object.assign(state, decoded.inputs || {});
+    state.aiResults = decoded.results;
+    state.financial = decoded.financial;
+    document.getElementById('wizard').style.display = 'none';
+    renderResults(state.aiResults);
+    document.getElementById('shareBanner').style.display = 'flex';
+    document.getElementById('shareUrl').textContent = location.href;
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+// SAVE TO FILE (JSON)
+// ═══════════════════════════════════════════════════════════
+function saveToFile() {
+  try { collectGate(state.currentGate); } catch(e) {}
+  const saveData = {
+    savedAt: new Date().toISOString(),
+    version: 2,
+    currentGate: state.currentGate,
+    maxGateReached,
+    selections: state.selections,
+    project_meta: state.project_meta,
+    positioning: state.positioning,
+    gtm: state.gtm,
+    build_plan: state.build_plan,
+    revenue: state.revenue,
+    expenses: state.expenses,
+    funding: state.funding,
+    financial: state.financial,
+    aiResults: state.aiResults,
+    fieldValues: captureFieldValues()
+  };
+  const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  const name = state.project_meta?.companyName ? `${state.project_meta.companyName.replace(/\s+/g,'-').toLowerCase()}-plan.json` : 'founder-plan.json';
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  // Show toast
+  const toast = document.getElementById('saveToast');
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESTART
+// ═══════════════════════════════════════════════════════════
+function restartWizard() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('wizard').style.display = 'block';
+  clearSession();
+  location.hash = '';
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initDefaultRows();
+  updateExpensePreview();
+  loadSessionPrompt();
+  checkShareLink();
+  updateSidebar(0);
+});
+</script>
+</body>
+</html>
