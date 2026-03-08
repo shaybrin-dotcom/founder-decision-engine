@@ -1698,7 +1698,7 @@ async function runAIAssist(mode) {
           <div class="ai-item"><div class="ai-label">Key Risk</div><div class="ai-val" style="color:var(--danger)">${parsed.key_risk}</div></div>
           <div class="ai-item"><div class="ai-label">Before You Generate</div><div class="ai-val">${parsed.recommendation}</div></div>
         </div>
-        <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:${col}">Confidence: ${parsed.confidence.toUpperCase()}</div>`;
+        <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:${col}">Confidence: ${(parsed.confidence || 'unknown').toUpperCase()}</div>`;
     }
   } catch(e) {
     content.innerHTML = `<div style="color:var(--danger);font-size:12px">Analysis failed: ${e.message}</div>`;
@@ -1752,7 +1752,7 @@ Return ONLY valid JSON, no markdown, no preamble:
     }
   ]
 }
-Generate 5-7 assumptions specific to this startup. Tests must be actionable in 14 days for under $500.`;
+Generate 4-5 assumptions specific to this startup. Keep all text fields concise — under 2 sentences each. Tests must be actionable in 14 days for under $500.`;
 
   const usr = JSON.stringify({
     company: state.project_meta,
@@ -1777,7 +1777,7 @@ Generate 5-7 assumptions specific to this startup. Tests must be actionable in 1
   try {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ system: sys, messages:[{role:'user',content:usr}], max_tokens:4000 })
+      body: JSON.stringify({ system: sys, messages:[{role:'user',content:usr}], max_tokens:2000 })
     });
     if (!resp.ok) throw new Error(`API ${resp.status}`);
     const data = await resp.json();
