@@ -322,11 +322,164 @@ table.fin .crit-cell{color:var(--danger);font-weight:500}
   body{background:#fff;color:#111}
   .verdict-banner,.one-pager,.assumption,.flag{border-color:#ddd}
 }
+
+/* ── LANDING PAGE ── */
+#landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;position:relative;overflow:hidden}
+#landing::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(14,165,160,.12),transparent);pointer-events:none}
+.landing-kicker{font-family:var(--mono);font-size:11px;color:var(--accent-light);letter-spacing:2px;text-transform:uppercase;margin-bottom:18px}
+.landing-title{font-family:var(--serif);font-size:52px;line-height:1.08;letter-spacing:-.5px;margin-bottom:16px;max-width:680px}
+.landing-title em{color:var(--accent-light);font-style:normal}
+.landing-sub{font-size:16px;color:var(--text-muted);max-width:480px;line-height:1.7;margin-bottom:40px}
+.landing-bullets{display:flex;flex-direction:column;gap:10px;margin-bottom:44px;text-align:left;max-width:420px}
+.lbullet{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--text-muted)}
+.lbullet-icon{color:var(--accent-light);font-size:15px;flex-shrink:0;margin-top:1px}
+.tnc-box{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:18px 20px;max-width:520px;width:100%;margin-bottom:24px;text-align:left}
+.tnc-scroll{max-height:140px;overflow-y:auto;font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:14px;padding-right:6px}
+.tnc-scroll::-webkit-scrollbar{width:4px}
+.tnc-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tnc-scroll p{margin-bottom:8px}
+.tnc-check{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text);cursor:pointer}
+.tnc-check input{margin-top:3px;accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;cursor:pointer}
+.landing-cta{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:15px 40px;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;opacity:.4;pointer-events:none}
+.landing-cta.enabled{opacity:1;pointer-events:all}
+.landing-cta.enabled:hover{background:#14b8a6;transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,160,.3)}
+.landing-credit{margin-top:32px;font-size:12px;color:var(--text-dim)}
+.landing-credit strong{color:var(--text-muted)}
+
+/* ── SURVEY MODAL ── */
+#surveyOverlay{position:fixed;inset:0;background:rgba(7,12,24,.85);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:24px}
+#surveyOverlay.visible{display:flex}
+.survey-modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:36px;max-width:480px;width:100%;animation:fadeUp .2s ease}
+.survey-title{font-family:var(--serif);font-size:26px;margin-bottom:6px;letter-spacing:-.2px}
+.survey-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.6}
+.survey-q{margin-bottom:22px}
+.survey-q label{display:block;font-size:13px;font-weight:500;margin-bottom:8px}
+.stars{display:flex;gap:6px}
+.star{font-size:22px;cursor:pointer;color:var(--border2);transition:color .1s;line-height:1}
+.star.lit{color:var(--warn)}
+.survey-q select,.survey-q textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none}
+.survey-q select:focus,.survey-q textarea:focus{border-color:var(--accent-border)}
+.survey-q textarea{min-height:72px;resize:vertical;line-height:1.5}
+.survey-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.btn-survey-skip{background:transparent;border:1px solid var(--border2);color:var(--text-muted);border-radius:7px;padding:9px 20px;font-family:var(--sans);font-size:13px;cursor:pointer}
+.btn-survey-submit{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:9px 22px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer}
+.btn-survey-submit:hover{background:#14b8a6}
+.survey-thanks{text-align:center;padding:20px 0}
+.survey-thanks .big{font-size:40px;margin-bottom:10px}
+.survey-thanks p{color:var(--text-muted);font-size:14px}
+
+/* ── CONTACT SECTION ── */
+.contact-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-top:36px}
+.contact-head{font-family:var(--mono);font-size:10px;color:var(--accent-light);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.contact-head::after{content:'';flex:1;height:1px;background:var(--border)}
+.contact-intro{font-size:13.5px;color:var(--text-muted);margin-bottom:20px;line-height:1.6}
+.contact-intro strong{color:var(--text)}
+.contact-form{display:flex;flex-direction:column;gap:12px}
+.contact-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.contact-form input,.contact-form textarea,.contact-form select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-family:var(--sans);font-size:13.5px;outline:none;transition:border-color .15s}
+.contact-form input:focus,.contact-form textarea:focus,.contact-form select:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px var(--accent-dim)}
+.contact-form textarea{min-height:90px;resize:vertical;line-height:1.55}
+.contact-form select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235d7299' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;cursor:pointer;appearance:none}
+.contact-form select option{background:#0c1220}
+.btn-contact{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:11px 26px;font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;align-self:flex-start;transition:all .12s;display:flex;align-items:center;gap:8px}
+.btn-contact:hover:not(:disabled){background:#14b8a6;transform:translateY(-1px)}
+.btn-contact:disabled{opacity:.45;cursor:not-allowed}
+.contact-success{background:var(--success-dim);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:14px 18px;color:var(--success);font-size:13px;display:none}
+.contact-success.visible{display:block}
+
+/* ── LINKEDIN ── */
+.linkedin-section{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-top:16px;gap:16px;flex-wrap:wrap}
+.li-left{display:flex;align-items:center;gap:14px}
+.li-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#0077b5);display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:14px;font-weight:600;color:#fff;flex-shrink:0}
+.li-info{display:flex;flex-direction:column;gap:3px}
+.li-name{font-size:14px;font-weight:600;color:var(--text)}
+.li-title{font-size:12px;color:var(--text-muted);line-height:1.4}
+.li-follow-btn{display:flex;align-items:center;gap:8px;background:#0077b5;color:#fff;border:none;border-radius:7px;padding:10px 18px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .12s}
+.li-follow-btn:hover{background:#006097;transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,119,181,.35)}
 </style>
 </head>
 <body>
 
+<!-- ── LANDING PAGE ── -->
+<div id="landing">
+  <div class="landing-kicker">CFO-grade clarity for founders</div>
+  <h1 class="landing-title">Turn your idea into a<br><em>structured 12-month plan</em></h1>
+  <p class="landing-sub">Answer 7 structured questions. Get a financial model, contradiction analysis, and assumption ledger — built with a CFO's thinking, not a consultant's template.</p>
+
+  <div class="landing-bullets">
+    <div class="lbullet"><span class="lbullet-icon">&#10003;</span><span>Deterministic 12-month cash model — no LLM hallucinations in the numbers</span></div>
+    <div class="lbullet"><span class="lbullet-icon">&#10003;</span><span>Contradiction detection built from real CFO experience reviewing founder plans</span></div>
+    <div class="lbullet"><span class="lbullet-icon">&#10003;</span><span>Assumption ledger with 14-day validation tests for each key risk</span></div>
+    <div class="lbullet"><span class="lbullet-icon">&#10003;</span><span>Export to Excel, Gamma deck prompt, and shareable link — all free</span></div>
+    <div class="lbullet"><span class="lbullet-icon">&#10003;</span><span>Your data never leaves your browser. Nothing stored on any server.</span></div>
+  </div>
+
+  <div class="tnc-box">
+    <div class="tnc-scroll">
+      <p><strong>Terms of Use</strong></p>
+      <p>This tool is provided free of charge for informational and planning purposes only. By using it, you acknowledge and agree to the following:</p>
+      <p><strong>No professional advice.</strong> The outputs generated by this tool do not constitute financial, legal, investment, or business advice. They are illustrative projections based solely on the inputs you provide.</p>
+      <p><strong>No liability.</strong> Shay Brin and the Founder Decision Engine accept no responsibility or liability for any business decisions, financial outcomes, or losses arising from the use of this tool or its outputs.</p>
+      <p><strong>Data handling.</strong> All financial inputs, projections, and business details you enter are processed locally in your browser. No data is stored, logged, or retained by this tool or its operator. When you request AI-generated analysis, your inputs are transmitted to Anthropic's API solely to generate your results. Anthropic does not use API inputs to train its models by default. Your data also transits Vercel's infrastructure as the API proxy layer. Neither Vercel nor Anthropic retain your business data. For full details see Anthropic's API privacy policy at anthropic.com and Vercel's privacy policy at vercel.com.</p>
+      <p><strong>No guarantees.</strong> Financial projections are based on your inputs and are inherently uncertain. Past patterns referenced in contradiction detection are illustrative, not predictive.</p>
+      <p><strong>Use at your own risk.</strong> You are solely responsible for verifying any outputs and for all decisions you make based on them. Always consult qualified professionals before making significant business or financial decisions.</p>
+    </div>
+    <label class="tnc-check">
+      <input type="checkbox" id="tncCheck" onchange="toggleCTA()">
+      I have read and agree to the terms of use above
+    </label>
+  </div>
+
+  <button class="landing-cta" id="landingCTA" onclick="enterApp()">Start building my plan →</button>
+  <div class="landing-credit">Built by <strong>Shay Brin</strong> — former CFO, AI builder, long-distance runner</div>
+</div>
+
+<!-- ── SURVEY MODAL ── -->
+<div id="surveyOverlay">
+  <div class="survey-modal">
+    <div id="surveyForm">
+      <div class="survey-title">One minute of feedback</div>
+      <p class="survey-sub">Your export is ready. Three quick questions help make this tool better for every founder who uses it after you.</p>
+      <div class="survey-q">
+        <label>How useful was the contradiction analysis?</label>
+        <div class="stars" id="stars">
+          <span class="star" onclick="rateStar(1)">&#9733;</span>
+          <span class="star" onclick="rateStar(2)">&#9733;</span>
+          <span class="star" onclick="rateStar(3)">&#9733;</span>
+          <span class="star" onclick="rateStar(4)">&#9733;</span>
+          <span class="star" onclick="rateStar(5)">&#9733;</span>
+        </div>
+      </div>
+      <div class="survey-q">
+        <label>What is your current stage?</label>
+        <select id="surveyStage">
+          <option value="">Select...</option>
+          <option>Idea</option>
+          <option>Prototype / POC</option>
+          <option>MVP</option>
+          <option>Paying customers</option>
+          <option>Series A+</option>
+        </select>
+      </div>
+      <div class="survey-q">
+        <label>One thing you would improve or add? (optional)</label>
+        <textarea id="surveyText" placeholder="Any idea is welcome..."></textarea>
+      </div>
+      <div class="survey-btns">
+        <button class="btn-survey-skip" onclick="closeSurvey()">Skip</button>
+        <button class="btn-survey-submit" onclick="submitSurvey()">Submit →</button>
+      </div>
+    </div>
+    <div class="survey-thanks" id="surveyThanks" style="display:none">
+      <div class="big">&#128591;</div>
+      <p>Thank you. Your feedback goes directly to Shay.</p>
+      <p style="margin-top:8px;font-size:12px;color:var(--text-dim)">Closing in 3 seconds...</p>
+    </div>
+  </div>
+</div>
+
 <!-- RESTORE SESSION BANNER -->
+<div id="appShell">
 <div id="restoreBanner">
   <span>You have an unsaved session from <strong id="savedDate"></strong>. Continue where you left off?</span>
   <div class="banner-btns">
@@ -406,6 +559,8 @@ table.fin .crit-cell{color:var(--danger);font-weight:500}
   </div>
   <div class="sidebar-save">
     <button class="save-btn-side" onclick="saveToFile()">⬇ Save progress (JSON)</button>
+    <button class="save-btn-side" onclick="document.getElementById('loadFileInput').click()" style="margin-top:6px">⬆ Load saved plan (JSON)</button>
+    <input type="file" id="loadFileInput" accept=".json" style="display:none" onchange="loadFromFile(event)">
   </div>
 </nav>
 
@@ -856,16 +1011,59 @@ table.fin .crit-cell{color:var(--danger);font-weight:500}
 
   <!-- Export -->
   <div class="export-row">
-    <button class="btn btn-ghost btn-sm" onclick="exportXLSX()">⬇ Full Budget (Excel)</button>
-    <button class="btn btn-ghost btn-sm" onclick="exportGammaPrompt()">⬡ Gamma Deck Prompt</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportXLSXWithSurvey()">⬇ Full Budget (Excel)</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportGammaWithSurvey()">⬡ Gamma Deck Prompt</button>
     <button class="btn btn-ghost btn-sm" onclick="buildShareLink()">🔗 Share this plan</button>
     <button class="btn btn-ghost btn-sm" onclick="window.print()">⎙ Print / PDF</button>
     <button class="btn btn-ghost btn-sm" onclick="restartWizard()">↺ Start over</button>
   </div>
 
+  <!-- Contact -->
+  <div class="contact-section">
+    <div class="contact-head">05 — Talk to Shay</div>
+    <p class="contact-intro"><strong>Need help with your plan?</strong> If you want a real CFO to look at your numbers, challenge your assumptions, or help you prepare for a raise — send me a message. I work with early-stage founders on a fractional basis.</p>
+    <div class="contact-form" id="contactForm">
+      <div class="contact-row">
+        <input type="text" id="contactName" placeholder="Your name *">
+        <input type="email" id="contactEmail" placeholder="Your email *">
+      </div>
+      <select id="contactReason">
+        <option value="">What can I help with?</option>
+        <option>Review my financial model</option>
+        <option>Prepare for investor conversations</option>
+        <option>Fractional CFO engagement</option>
+        <option>Feedback on the tool</option>
+        <option>Other</option>
+      </select>
+      <textarea id="contactMessage" placeholder="Tell me about your startup and what you need..."></textarea>
+      <button class="btn-contact" id="contactBtn" onclick="submitContact()">
+        <span>Send message</span><span>→</span>
+      </button>
+    </div>
+    <div class="contact-success" id="contactSuccess">
+      &#10003; Message sent. I will get back to you within 48 hours.
+    </div>
+  </div>
+
+  <!-- LinkedIn -->
+  <div class="linkedin-section">
+    <div class="li-left">
+      <div class="li-avatar">SB</div>
+      <div class="li-info">
+        <div class="li-name">Shay Brin</div>
+        <div class="li-title">Former CFO · AI Builder · Writing about finance, startups & AI</div>
+      </div>
+    </div>
+    <a href="https://www.linkedin.com/in/shaybrin" target="_blank" rel="noopener" class="li-follow-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      Follow on LinkedIn
+    </a>
+  </div>
+
 </div>
 </main>
 </div><!-- /app-body -->
+</div><!-- /appShell -->
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -1883,6 +2081,76 @@ function checkShareLink() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// LOAD FROM FILE (JSON)
+// ═══════════════════════════════════════════════════════════
+function loadFromFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const raw = e.target.result;
+      const saved = JSON.parse(raw);
+
+      // Accept any object that looks like plan data — old or new format
+      if (typeof saved !== 'object' || saved === null) {
+        throw new Error('File does not contain valid plan data.');
+      }
+
+      // Restore state — safely fall back for every field
+      state.selections     = saved.selections     || {};
+      state.project_meta   = saved.project_meta   || {};
+      state.positioning    = saved.positioning    || {};
+      state.gtm            = saved.gtm            || {};
+      state.build_plan     = saved.build_plan     || {};
+      state.revenue        = saved.revenue        || {};
+      state.expenses       = saved.expenses       || { founderSalary: 0, roles: [], costs: [] };
+      state.funding        = saved.funding        || {};
+      state.financial      = saved.financial      || null;
+      state.aiResults      = saved.aiResults      || null;
+
+      maxGateReached = saved.maxGateReached || saved.currentGate || 0;
+
+      // Restore field values if present (newer saves only)
+      if (saved.fieldValues && typeof restoreFieldValues === 'function') {
+        try { restoreFieldValues(saved.fieldValues); } catch(e) {}
+      }
+
+      // Re-render dynamic expense rows
+      try { renderRoles(); } catch(e) {}
+      try { renderCosts(); } catch(e) {}
+      try { updateExpensePreview(); } catch(e) {}
+
+      // Navigate to correct screen
+      if (state.aiResults && state.financial) {
+        document.getElementById('wizard').style.display = 'none';
+        renderResults(state.aiResults);
+        document.getElementById('results').style.display = 'block';
+      } else {
+        const gate = Math.min(saved.currentGate || 0, 6);
+        showGate(gate);
+      }
+
+      // Confirm to user
+      const toast = document.getElementById('saveToast');
+      toast.textContent = '✓ Plan loaded successfully';
+      toast.classList.add('visible');
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        toast.textContent = '✓ Saved to your computer';
+      }, 2500);
+
+    } catch(err) {
+      console.error('Load error:', err);
+      alert('Could not load file. Error: ' + err.message + '\n\nMake sure it is a .json file saved from this tool.');
+    }
+    // Reset input so same file can be loaded again
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════════
 // SAVE TO FILE (JSON)
 // ═══════════════════════════════════════════════════════════
 function saveToFile() {
@@ -1917,25 +2185,153 @@ function saveToFile() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// LANDING PAGE
+// ═══════════════════════════════════════════════════════════
+function toggleCTA() {
+  const btn = document.getElementById('landingCTA');
+  const checked = document.getElementById('tncCheck').checked;
+  btn.classList.toggle('enabled', checked);
+}
+
+function enterApp() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('restoreBanner').style.display = 'flex';
+  document.getElementById('appShell').style.display = 'block';
+  // Re-trigger session check
+  loadSessionPrompt();
+  checkShareLink();
+  updateSidebar(0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SURVEY
+// ═══════════════════════════════════════════════════════════
+let surveyRating = 0;
+let surveyShown = false;
+
+function showSurvey() {
+  if (surveyShown) return;
+  surveyShown = true;
+  document.getElementById('surveyOverlay').classList.add('visible');
+}
+
+function rateStar(n) {
+  surveyRating = n;
+  document.querySelectorAll('.star').forEach((s, i) => {
+    s.classList.toggle('lit', i < n);
+  });
+}
+
+function closeSurvey() {
+  document.getElementById('surveyOverlay').classList.remove('visible');
+}
+
+async function submitSurvey() {
+  const rating = surveyRating;
+  const stage = document.getElementById('surveyStage').value;
+  const text = document.getElementById('surveyText').value;
+  const company = state.project_meta?.companyName || 'Unknown';
+
+  // Submit to Formspree — replace YOUR_FORM_ID with your actual Formspree form ID
+  try {
+    await fetch('https://formspree.io/f/YOUR_SURVEY_FORM_ID', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'survey',
+        company,
+        rating: `${rating}/5`,
+        stage,
+        feedback: text || '(no comment)',
+        submitted: new Date().toISOString()
+      })
+    });
+  } catch(e) {}
+
+  document.getElementById('surveyForm').style.display = 'none';
+  document.getElementById('surveyThanks').style.display = 'block';
+  setTimeout(() => closeSurvey(), 3000);
+}
+
+function exportXLSXWithSurvey() {
+  exportXLSX();
+  setTimeout(() => showSurvey(), 800);
+}
+
+function exportGammaWithSurvey() {
+  exportGammaPrompt();
+  setTimeout(() => showSurvey(), 800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTACT FORM
+// ═══════════════════════════════════════════════════════════
+async function submitContact() {
+  const name = document.getElementById('contactName').value.trim();
+  const email = document.getElementById('contactEmail').value.trim();
+  const reason = document.getElementById('contactReason').value;
+  const message = document.getElementById('contactMessage').value.trim();
+
+  if (!name || !email || !message) {
+    alert('Please fill in your name, email, and message.');
+    return;
+  }
+
+  const btn = document.getElementById('contactBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Sending...</span>';
+
+  const company = state.project_meta?.companyName || '';
+  const stage = state.project_meta?.stage || '';
+
+  try {
+    // Replace YOUR_CONTACT_FORM_ID with your actual Formspree form ID
+    const resp = await fetch('https://formspree.io/f/YOUR_CONTACT_FORM_ID', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, email, reason, message,
+        startup: company,
+        stage,
+        submitted: new Date().toISOString()
+      })
+    });
+
+    if (resp.ok) {
+      document.getElementById('contactForm').style.display = 'none';
+      document.getElementById('contactSuccess').classList.add('visible');
+    } else {
+      throw new Error('Failed');
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Send message</span><span>→</span>';
+    alert('Could not send message. Please email me directly at shay@shaybrin.com');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // RESTART
 // ═══════════════════════════════════════════════════════════
 function restartWizard() {
   document.getElementById('results').style.display = 'none';
-  document.getElementById('wizard').style.display = 'block';
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('tncCheck').checked = false;
+  document.getElementById('landingCTA').classList.remove('enabled');
   clearSession();
   location.hash = '';
-  location.reload();
 }
 
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // Show landing page first — hide app shell
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('restoreBanner').style.display = 'none';
   initDefaultRows();
   updateExpensePreview();
-  loadSessionPrompt();
-  checkShareLink();
-  updateSidebar(0);
 });
 </script>
 </body>
