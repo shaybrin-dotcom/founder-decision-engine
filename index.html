@@ -2234,7 +2234,7 @@ async function submitSurvey() {
 
   // Submit to Formspree — replace YOUR_FORM_ID with your actual Formspree form ID
   try {
-    await fetch('https://formspree.io/f/YOUR_SURVEY_FORM_ID', {
+    await fetch('https://formspree.io/f/mojkvppq', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2285,8 +2285,8 @@ async function submitContact() {
   const stage = state.project_meta?.stage || '';
 
   try {
-    // Replace YOUR_CONTACT_FORM_ID with your actual Formspree form ID
-    const resp = await fetch('https://formspree.io/f/YOUR_CONTACT_FORM_ID', {
+    // Replace xeeroppj with your actual Formspree form ID
+    const resp = await fetch('https://formspree.io/f/xeeroppj', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2306,7 +2306,7 @@ async function submitContact() {
   } catch(e) {
     btn.disabled = false;
     btn.innerHTML = '<span>Send message</span><span>→</span>';
-    alert('Could not send message. Please email me directly at shay@shaybrin.com');
+    alert('Could not send message. Please email me directly at shaybrin@gmail.com');
   }
 }
 
